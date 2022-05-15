@@ -19,6 +19,8 @@ int write_file_from_string(const char *str, int len, const char *dir, const char
 
 int rsa_encrypt(const unsigned char *plaintext, unsigned char *ciphertext, RSA *rsa, int rsa_type);
 int rsa_decrypt(unsigned char *plaintext, const unsigned char *ciphertext, RSA *rsa, int rsa_type);
+int rsa_rsa2str(char *str, RSA *rsa, int rsa_type);
+int rsa_str2rsa(const char *str, RSA **rsa, int rsa_type);
 
 // log.c
 
