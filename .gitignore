@@ -1,3 +1,13 @@
+# target
+netdisk_client
+
+#cryption key
+*.pem
+*.pwd
+
+# .vscode
+.vscode/
+
 # Prerequisites
 *.d
 
