@@ -28,7 +28,6 @@ int msg_reqconf(struct program_stat_t *program_stat) {
 
     char recvbuf_msgtype = 0;
     int recvbuf_confirmlen = 0;
-    char recvbuf_confirm[1024] = {0};
     int recvbuf_rsastrlen = 0;
     char recvbuf_rsastr[4096] = {0};
 
@@ -36,13 +35,14 @@ int msg_reqconf(struct program_stat_t *program_stat) {
     RET_CHECK_BLACKLIST(-1, ret, "recv_n");
     ret = recv_n(program_stat->connect_fd, &recvbuf_confirmlen, sizeof(recvbuf_confirmlen), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv_n");
-    ret = recv_n(program_stat->connect_fd, recvbuf_confirm, recvbuf_confirmlen, 0);
+    ret = recv_n(program_stat->connect_fd, program_stat->confirm, recvbuf_confirmlen, 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv_n");
     ret = recv_n(program_stat->connect_fd, &recvbuf_rsastrlen, sizeof(recvbuf_rsastrlen), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv_n");
     ret = recv_n(program_stat->connect_fd, recvbuf_rsastr, recvbuf_rsastrlen, 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv_n");
 
+    logging(LOG_DEBUG, program_stat->confirm);
     if (recvbuf_rsastrlen) {
         logging(LOG_WARN, "本地公钥不存在或与服务端不匹配, 已重新从服务端下载公钥, 是否要使用并将其保存至本地?");
         char savepubrsa_input;
