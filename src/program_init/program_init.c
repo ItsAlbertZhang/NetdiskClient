@@ -18,10 +18,10 @@ int program_init(struct program_stat_t *program_stat) {
     RET_CHECK_BLACKLIST(-1, ret, "init_rsa_keys");
     logging(LOG_INFO, "成功获取 rsa 密钥.");
 
-    // 初始化 tcp
+    // 初始化连接
     program_stat->connect_fd = init_connect(config_dir, config);
     RET_CHECK_BLACKLIST(-1, program_stat->connect_fd, "init_connect");
-    logging(LOG_INFO, "成功初始化 tcp.");
+    logging(LOG_INFO, "成功初始化连接.");
 
     return 0;
 }
