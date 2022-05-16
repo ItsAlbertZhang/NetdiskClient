@@ -29,6 +29,14 @@ extern char logbuf[4096];
 // 记录日志
 int logging(int type, const char *str);
 
+// epoll.c
+
+// 添加 epoll 监听
+int epoll_add(int fd);
+
+// 移除 epoll 监听
+int epoll_del(int fd);
+
 // random.c
 
 // 生成随机字符串

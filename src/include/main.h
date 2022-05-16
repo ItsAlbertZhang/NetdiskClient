@@ -5,10 +5,12 @@
 
 // 进程状态
 struct program_stat_t {
+    char config_dir[1024];
     RSA *private_rsa;
     RSA *public_rsa;
     RSA *serverpub_rsa;
     int connect_fd;
+    char confirm[64];
 };
 
 enum log_type {

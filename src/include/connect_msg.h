@@ -21,6 +21,9 @@ size_t recv_n(int connect_fd, void *buf, size_t len, int flags);
 // 判断命令类型
 int connect_msg_cmdtype(char *cmd);
 
+// 下发验证请求
+int msg_reqconf(struct program_stat_t *program_stat);
+
 // 测试代码
 int msg_test(struct program_stat_t *program_stat, char *cmd);
 

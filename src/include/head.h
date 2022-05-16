@@ -9,6 +9,7 @@
 // #include <grp.h>
 // #include <netdb.h>
 #include <netinet/in.h>
+#include <openssl/md5.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 // #include <pthread.h>
@@ -18,7 +19,7 @@
 // #include <stdlib.h>
 #include <string.h>
 // #include <strings.h>
-// #include <sys/epoll.h>
+#include <sys/epoll.h>
 // #include <sys/ipc.h>
 // #include <sys/mman.h>
 // #include <sys/msg.h>
