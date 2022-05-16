@@ -1,8 +1,8 @@
 #include "head.h"
-#include "program_init.h"
 #include "mylibrary.h"
+#include "program_init.h"
 
-int tcp_connect(const char *config_dir, char config[][MAX_CONFIG_LENGTH]) {
+int init_connect(const char *config_dir, char config[][MAX_CONFIG_LENGTH]) {
     int ret = 0;
 
     // 获取 tcp 配置
@@ -22,6 +22,6 @@ int tcp_connect(const char *config_dir, char config[][MAX_CONFIG_LENGTH]) {
         logging(LOG_ERROR, "无法连接至服务器.");
         exit(0);
     }
-    
+
     return connect_fd;
 }

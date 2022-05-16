@@ -5,6 +5,9 @@
 
 // 进程状态
 struct program_stat_t {
+    RSA *private_rsa;
+    RSA *public_rsa;
+    RSA *serverpub_rsa;
     int connect_fd;
 };
 
