@@ -7,12 +7,11 @@
 int connect_msg_handle(struct program_stat_t *program_stat) {
     int ret = 0;
     char cmd[1024] = {0};
-
+    read(STDIN_FILENO, cmd, sizeof(cmd));
     int cmdtype = connect_msg_cmdtype(cmd);
     switch (cmdtype) {
     case MT_NULL:
-        logging(LOG_DEBUG, "执行测试代码.");
-        msg_test(program_stat, cmd);
+        logging(LOG_WARN, "无效的命令.");
         break;
     case MT_REQCONF:
         logging(LOG_INFO, "执行下发验证请求.");
@@ -22,6 +21,8 @@ int connect_msg_handle(struct program_stat_t *program_stat) {
         break;
     case MT_REGIST:
         logging(LOG_INFO, "执行注册请求.");
+        ret = msg_regist(program_stat);
+        RET_CHECK_BLACKLIST(-1, ret, "msg_regist");
         break;
     case MT_RECONN:
         logging(LOG_INFO, "执行连接请求.");
@@ -58,6 +59,13 @@ size_t recv_n(int connect_fd, void *buf, size_t len, int flags) {
 // 判断命令类型
 int connect_msg_cmdtype(char *cmd) {
     int ret = 0;
+
+    if (!strncmp(cmd, "regist", strlen("regist"))) {
+        return MT_REGIST;
+    }
+    if (!strncmp(cmd, "login", strlen("login"))) {
+        return MT_LOGIN;
+    }
 
     return 0;
 }

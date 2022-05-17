@@ -24,7 +24,7 @@ int connect_msg_cmdtype(char *cmd);
 // 下发验证请求
 int msg_reqconf(struct program_stat_t *program_stat);
 
-// 测试代码
-int msg_test(struct program_stat_t *program_stat, char *cmd);
+// 注册请求
+int msg_regist(struct program_stat_t *program_stat);
 
 #endif /* __CONNECT_MSG_H__ */

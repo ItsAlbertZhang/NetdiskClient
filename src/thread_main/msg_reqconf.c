@@ -3,53 +3,90 @@
 #include "main.h"
 #include "mylibrary.h"
 
+struct msg_reqconf_sendbuf_t {
+    char msgtype;             // 消息类型
+    int serverpub_md5_len;    // 下一字段的长度
+    char serverpub_md5[1024]; // 客户端本地存储的服务端公钥字符串的 MD5 校验码
+};
+
+struct msg_reqconf_recvbuf_t {
+    char msgtype;             // 消息类型
+    int confirm_len;          // 下一字段的长度
+    char confirm[64];         // 会话确认码
+    int serverpub_str_len;    // 下一字段的长度
+    char serverpub_str[1024]; // 服务端公钥. 当无需传输时, 此字段与上一字段置空.
+};
+
+static int msg_reqconf_send(int connect_fd, const struct msg_reqconf_sendbuf_t *sendbuf) {
+    int ret = 0;
+
+    ret = send(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send");
+    ret = send(connect_fd, &sendbuf->serverpub_md5_len, sizeof(sendbuf->serverpub_md5_len) + sendbuf->serverpub_md5_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send");
+
+    return 0;
+}
+
+static int msg_reqconf_recv(int connect_fd, struct msg_reqconf_recvbuf_t *recvbuf) {
+    int ret = 0;
+
+    bzero(recvbuf, sizeof(struct msg_reqconf_recvbuf_t));
+    ret = recv_n(connect_fd, &recvbuf->msgtype, sizeof(recvbuf->msgtype), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "recv");
+    ret = recv_n(connect_fd, &recvbuf->confirm_len, sizeof(recvbuf->confirm_len), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "recv");
+    ret = recv_n(connect_fd, recvbuf->confirm, recvbuf->confirm_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "recv");
+    ret = recv_n(connect_fd, &recvbuf->serverpub_str_len, sizeof(recvbuf->serverpub_str_len), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "recv");
+    ret = recv_n(connect_fd, recvbuf->serverpub_str, recvbuf->serverpub_str_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "recv");
+
+    return 0;
+}
+
 int msg_reqconf(struct program_stat_t *program_stat) {
     int ret = 0;
 
-    char sendbuf_msgtype = MT_REQCONF;
-    int sendbuf_msglen = 0;
-    char *sendbuf_msg = NULL;
+    // 准备资源
+    struct msg_reqconf_sendbuf_t sendbuf;
+    struct msg_reqconf_recvbuf_t recvbuf;
+    bzero(&sendbuf, sizeof(sendbuf));
+    bzero(&recvbuf, sizeof(recvbuf));
+    sendbuf.msgtype = MT_REQCONF;
+
+    // 若已在初始化阶段成功获取服务端公钥, 则将其转换为字符串并计算 MD5 校验码, 填入 sendbuf 结构体中的 serverpub_md5 成员中.
     if (program_stat->serverpub_rsa) {
-        char serverpub_str[4096] = {0};
-        ret = rsa_rsa2str(serverpub_str, program_stat->serverpub_rsa, PUBKEY);
+        char local_serverpub_str[1024] = {0};
+        ret = rsa_rsa2str(local_serverpub_str, program_stat->serverpub_rsa, PUBKEY); // 将服务端公钥 RSA 结构体转换为字符串
         RET_CHECK_BLACKLIST(-1, ret, "rsa_rsa2str");
-        sendbuf_msg = MD5(serverpub_str, strlen(serverpub_str), NULL);
-        sendbuf_msglen = strlen(sendbuf_msg);
+        strcpy(sendbuf.serverpub_md5, MD5(local_serverpub_str, strlen(local_serverpub_str), NULL)); // 获取字符串的 MD5 校验码
+        sendbuf.serverpub_md5_len = strlen(sendbuf.serverpub_md5);
     }
 
-    ret = send(program_stat->connect_fd, &sendbuf_msgtype, sizeof(sendbuf_msgtype), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
-    ret = send(program_stat->connect_fd, &sendbuf_msglen, sizeof(sendbuf_msglen), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
-    if (sendbuf_msglen) {
-        ret = send(program_stat->connect_fd, sendbuf_msg, sendbuf_msglen, 0);
-        RET_CHECK_BLACKLIST(-1, ret, "send");
-    }
+    // 发送消息
+    ret = msg_reqconf_send(program_stat->connect_fd, &sendbuf);
+    RET_CHECK_BLACKLIST(-1, ret, "msg_reqconf_send");
 
-    char recvbuf_msgtype = 0;
-    int recvbuf_confirmlen = 0;
-    int recvbuf_rsastrlen = 0;
-    char recvbuf_rsastr[4096] = {0};
+    // 接收消息
+    ret = msg_reqconf_recv(program_stat->connect_fd, &recvbuf);
+    RET_CHECK_BLACKLIST(-1, ret, "msg_reqconf_recv");
 
-    ret = recv_n(program_stat->connect_fd, &recvbuf_msgtype, sizeof(recvbuf_msgtype), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv_n");
-    ret = recv_n(program_stat->connect_fd, &recvbuf_confirmlen, sizeof(recvbuf_confirmlen), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv_n");
-    ret = recv_n(program_stat->connect_fd, program_stat->confirm, recvbuf_confirmlen, 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv_n");
-    ret = recv_n(program_stat->connect_fd, &recvbuf_rsastrlen, sizeof(recvbuf_rsastrlen), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv_n");
-    ret = recv_n(program_stat->connect_fd, recvbuf_rsastr, recvbuf_rsastrlen, 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv_n");
+    // 对接收到的确认码进行处理 (confirm 成员)
+    strcpy(program_stat->confirm, recvbuf.confirm);
+    logging(LOG_DEBUG, program_stat->confirm); // 将确认码作为 DEBUG 信息打印
 
-    logging(LOG_DEBUG, program_stat->confirm);
-    if (recvbuf_rsastrlen) {
-        logging(LOG_WARN, "本地公钥不存在或与服务端不匹配, 已重新从服务端下载公钥, 是否要使用并将其保存至本地?");
+    // 对可能接收到的服务端公钥进行处理 (serverpub_str 成员)
+    if (recvbuf.serverpub_str_len) { // serverpub_str_len 不为 0, 本地公钥不存在或与服务端不匹配, 服务端向本地发送了一个新的密钥.
+        logging(LOG_WARN, "[REQCONF] 本地公钥不存在或与服务端不匹配, 已重新从服务端下载公钥, 是否要使用并将其保存至本地?");
+        printf("[REQCONF] 请输入(y/n):");
+        fflush(stdout);
         char savepubrsa_input;
         int savepubrsa = -1;
-        while (-1 == savepubrsa) {
+        while (-1 == savepubrsa) { // 获取用户输入
             if (savepubrsa_input == '\n') {
-                printf("你输入的数据不合法! 请输入\"y\"或\"n\":");
+                printf("[ERROR]   你输入的数据不合法! 请输入\"y\"或\"n\":");
                 fflush(stdout);
             }
             savepubrsa_input = getchar();
@@ -60,15 +97,14 @@ int msg_reqconf(struct program_stat_t *program_stat) {
                 savepubrsa = 0;
             }
         }
-        RET_CHECK_BLACKLIST(-1, savepubrsa, "savepubrsa");
-        if (savepubrsa) {
-            ret = rsa_str2rsa(recvbuf_rsastr, &program_stat->serverpub_rsa, PUBKEY);
+        if (1 == savepubrsa) { // 用户同意将服务端公钥保存并覆盖至本地
+            ret = rsa_str2rsa(recvbuf.serverpub_str, &program_stat->serverpub_rsa, PUBKEY);
             RET_CHECK_BLACKLIST(-1, ret, "rsa_str2rsa");
-            write_file_from_string(recvbuf_rsastr, recvbuf_rsastrlen, program_stat->config_dir, "serverpub.pem");
+            write_file_from_string(recvbuf.serverpub_str, recvbuf.serverpub_str_len, program_stat->config_dir, "serverpub.pem");
             RET_CHECK_BLACKLIST(-1, ret, "write_file_from_string");
-            logging(LOG_INFO, "成功保存服务器公钥至本地.");
-        } else {
-            logging(LOG_FATAL, "已拒绝来自服务器的公钥, 程序已关闭.");
+            logging(LOG_INFO, "成功保存服务端公钥至本地.");
+        } else { // 用户拒绝来自服务端的公钥
+            logging(LOG_FATAL, "已拒绝来自服务端的公钥, 程序已关闭.");
             exit(0);
         }
     }

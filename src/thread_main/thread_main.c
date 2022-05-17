@@ -20,9 +20,9 @@ int thread_main_handle(struct program_stat_t *program_stat) {
     bzero(&events, sizeof(events));
     int ep_ready = 0; // 有消息来流的监听个数
 
-    ret = msg_reqconf(program_stat); // 向服务器发送下发验证请求
+    ret = msg_reqconf(program_stat); // 向服务端发送下发验证请求
     RET_CHECK_BLACKLIST(-1, ret, "msg_reqconf");
-    logging(LOG_INFO, "成功与服务器建立连接.");
+    logging(LOG_INFO, "成功与服务端建立连接.");
 
     char program_running_flag = 1; // 程序继续运行标志
     while (program_running_flag) {
@@ -32,7 +32,7 @@ int thread_main_handle(struct program_stat_t *program_stat) {
             if (events.data.fd == program_stat->connect_fd) { // 有来自服务端的消息, 说明服务端断开了连接
                 close(program_stat->connect_fd);
                 program_stat->connect_fd = 0;
-                logging(LOG_DEBUG, "服务器连接已断开.");
+                logging(LOG_DEBUG, "服务端连接已断开.");
             }
             if (events.data.fd == STDIN_FILENO) { // 消息来自 stdin
                 ret = connect_msg_handle(program_stat);
