@@ -30,8 +30,12 @@ int connect_msg_handle(struct program_stat_t *program_stat) {
             logging(LOG_ERROR, "msg_regist 执行出错.");
         }
         break;
-    case MT_RECONN:
-        logging(LOG_INFO, "执行连接请求.");
+    case MT_DUPCONN:
+        logging(LOG_INFO, "执行复制连接请求.");
+        ret = msg_dupconn(program_stat, cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msg_dupconn 执行出错.");
+        }
         break;
     case MT_COMM_S:
         logging(LOG_INFO, "执行短命令请求.");
@@ -71,6 +75,9 @@ int connect_msg_cmdtype(char *cmd) {
     }
     if (!strncmp(cmd, "login", strlen("login"))) {
         return MT_LOGIN;
+    }
+    if (!strncmp(cmd, "dup", strlen("dup"))) {
+        return MT_DUPCONN;
     }
 
     return 0;

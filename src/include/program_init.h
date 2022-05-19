@@ -15,7 +15,4 @@ int getconfig(const char *config_dir, const char *filename, char config[][MAX_CO
 // 初始化并获取 rsa 密钥
 int init_rsa_keys(RSA **private_rsa, RSA **public_rsa, RSA **serverpub_rsa, const char *config_dir);
 
-// 初始化连接
-int init_connect(const char *config_dir, char config[][MAX_CONFIG_LENGTH]);
-
 #endif /* __PROGRAM_INIT_H__ */

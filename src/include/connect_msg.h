@@ -10,7 +10,7 @@ enum msg_type {
     MT_REQCONF, // 下发验证请求
     MT_REGIST,  // 注册请求
     MT_LOGIN,   // 登录请求
-    MT_RECONN,  // 重连请求
+    MT_DUPCONN,  // 重连请求
     MT_COMM_S,  // 短命令请求
     MT_COMM_L,  // 长命令请求
 };
@@ -29,5 +29,8 @@ int msg_regist(struct program_stat_t *program_stat, const char *cmd);
 
 // 登录请求
 int msg_login(struct program_stat_t *program_stat, const char *cmd);
+
+// 复制连接请求
+int msg_dupconn(struct program_stat_t *program_stat, const char *cmd);
 
 #endif /* __CONNECT_MSG_H__ */
