@@ -89,12 +89,14 @@ int msg_reqconf(struct program_stat_t *program_stat) {
 
     // 对接收到的确认码进行处理 (confirm 成员)
     strcpy(program_stat->confirm, recvbuf.confirm);
-    logging(LOG_DEBUG, program_stat->confirm); // 将确认码作为 DEBUG 信息打印
+    sprintf(logbuf, "接收到来自服务器的确认码: %s", program_stat->confirm);
+    logging(LOG_DEBUG,logbuf); // 将确认码作为 DEBUG 信息打印
 
     // 对接收到的 token 进行处理
     ret = rsa_decrypt(program_stat->token, recvbuf.token_ciphertext, program_stat->private_rsa, PRIKEY);
     RET_CHECK_BLACKLIST(-1, ret, "rsa_decrypt");
-    logging(LOG_DEBUG, program_stat->token); // 将 token 作为 DEBUG 信息打印
+    sprintf(logbuf, "接收到来自服务器的token: %s", program_stat->token);
+    logging(LOG_DEBUG,logbuf); // 将 token 作为 DEBUG 信息打印
 
     // 对可能接收到的服务端公钥进行处理 (serverpub_str 成员)
     if (recvbuf.serverpub_str_len) { // serverpub_str_len 不为 0, 本地公钥不存在或与服务端不匹配, 服务端向本地发送了一个新的密钥.

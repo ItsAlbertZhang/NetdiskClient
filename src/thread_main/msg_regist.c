@@ -74,9 +74,8 @@ int msg_regist(struct program_stat_t *program_stat) {
     }
 
     // 获取密码并进行正式注册
-    recvbuf.approve = DISAPPROVE;
     int pwd_check = DISAPPROVE;
-    char pwd_plaintext[32] = {0};
+    char pwd_plaintext[64] = {0};
     char *pwd_plaintext_p = NULL;
     while (DISAPPROVE == pwd_check) {
         // 第一次从用户输入中获取密码

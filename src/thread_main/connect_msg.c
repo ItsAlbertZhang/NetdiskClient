@@ -18,6 +18,8 @@ int connect_msg_handle(struct program_stat_t *program_stat) {
         break;
     case MT_LOGIN:
         logging(LOG_INFO, "执行登录请求.");
+        ret = msg_login(program_stat, cmd);
+        RET_CHECK_BLACKLIST(-1, ret, "msg_login");
         break;
     case MT_REGIST:
         logging(LOG_INFO, "执行注册请求.");
