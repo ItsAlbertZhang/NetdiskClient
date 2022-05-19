@@ -11,6 +11,7 @@ struct program_stat_t {
     RSA *serverpub_rsa;
     int connect_fd;
     char confirm[64];
+    char token[1024];
 };
 
 enum log_type {
