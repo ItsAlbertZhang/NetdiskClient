@@ -25,7 +25,7 @@ int connect_msg_cmdtype(char *cmd);
 int msg_reqconf(struct program_stat_t *program_stat);
 
 // 注册请求
-int msg_regist(struct program_stat_t *program_stat);
+int msg_regist(struct program_stat_t *program_stat, const char *cmd);
 
 // 登录请求
 int msg_login(struct program_stat_t *program_stat, const char *cmd);

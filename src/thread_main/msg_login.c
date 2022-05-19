@@ -62,6 +62,29 @@ int msg_login(struct program_stat_t *program_stat, const char *cmd) {
     ret = sscanf(cmd, "%*s%s%s", sendbuf.username, pwd_plaintext);
     if(ret > 0) {
         sendbuf.username_len = strlen(sendbuf.username);
+        if (strlen(pwd_plaintext) >= 3 || strlen(pwd_plaintext) <= 30) {
+            pwd_check = APPROVE;
+        }
+    } else {
+        // 获取用户名
+        printf("[LOGIN] 请输入你的用户名: ");
+        fflush(stdout);
+        scanf("%s", sendbuf.username);
+        sendbuf.username_len = strlen(sendbuf.username);
+    }
+
+    while(DISAPPROVE == pwd_check) {
+        char *pwd_plaintext_p = getpass("[LOGIN] 请输入密码(无回显), 可输入 exit 退出:");
+        // 如果用户希望中断登录 (在 getpass 函数中无法通过 SIGINT 信号退出), 则跳出循环. 注意到此时会直接跳转到函数尾注册失败的情形.
+        if (0 == strcmp(pwd_plaintext_p, "exit")) {
+            break;
+        }
+        // 如果输入的密码不符合规范, 则重新进行循环.
+        if (strlen(pwd_plaintext_p) < 3 || strlen(pwd_plaintext_p) > 30) {
+            printf("[ERROR] 密码长度过短或过长, 请确保密码为 3 ~ 30 个字符.\n");
+            continue;
+        }
+        strcpy(pwd_plaintext, pwd_plaintext_p);
         pwd_check = APPROVE;
     }
 
@@ -91,9 +114,6 @@ int msg_login(struct program_stat_t *program_stat, const char *cmd) {
         ret = 0;
     } else if(PWD_ERROR == recvbuf.approve) {
         logging(LOG_WARN, "密码错误.");
-        ret = 0;
-    } else {
-        logging(LOG_ERROR, "未知错误.");
         ret = 0;
     }
 

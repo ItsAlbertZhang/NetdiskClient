@@ -44,7 +44,7 @@ static int msg_regist_recv(int connect_fd, struct msg_regist_recvbuf_t *recvbuf)
     return 0;
 }
 
-int msg_regist(struct program_stat_t *program_stat) {
+int msg_regist(struct program_stat_t *program_stat, const char *cmd) {
     int ret = 0;
 
     // 准备资源
@@ -54,28 +54,37 @@ int msg_regist(struct program_stat_t *program_stat) {
     bzero(&recvbuf, sizeof(recvbuf));
     sendbuf.msgtype = MT_REGIST;
 
-    // 核验用户名. 期间可能有与服务端的多次通信.
-    recvbuf.approve = DISAPPROVE;
-    while (DISAPPROVE == recvbuf.approve) {
-        // 获取用户希望注册的用户名
-        printf("[REGIST] 请输入想要注册的用户名:");
-        fflush(stdout);
-        scanf("%s", sendbuf.username);
+    int pwd_check = DISAPPROVE;
+    char pwd_plaintext[64] = {0};
+
+    ret = sscanf(cmd, "%*s%s%s", sendbuf.username, pwd_plaintext);
+    if (ret > 0) {
         sendbuf.username_len = strlen(sendbuf.username);
-        // 向服务端发送核验用户名的消息. 此时密码为空 (之前已经对 sendbuf 结构体进行过 bzero).
-        ret = msg_regist_send(program_stat->connect_fd, &sendbuf);
-        RET_CHECK_BLACKLIST(-1, ret, "msg_regist_send");
-        // 获取服务端的回复信息
-        ret = msg_regist_recv(program_stat->connect_fd, &recvbuf);
-        RET_CHECK_BLACKLIST(-1, ret, "msg_regist_recv");
-        if (DISAPPROVE == recvbuf.approve) { // 说明服务端拒绝了该用户名
-            printf("[REGIST] 无法使用该用户名. 请重试.\n");
+        if (strlen(pwd_plaintext) >= 3 || strlen(pwd_plaintext) <= 30) {
+            pwd_check = APPROVE;
+        }
+    } else {
+        // 核验用户名. 期间可能有与服务端的多次通信.
+        recvbuf.approve = DISAPPROVE;
+        while (DISAPPROVE == recvbuf.approve) {
+            // 获取用户希望注册的用户名
+            printf("[REGIST] 请输入想要注册的用户名:");
+            fflush(stdout);
+            scanf("%s", sendbuf.username);
+            sendbuf.username_len = strlen(sendbuf.username);
+            // 向服务端发送核验用户名的消息. 此时密码为空 (之前已经对 sendbuf 结构体进行过 bzero).
+            ret = msg_regist_send(program_stat->connect_fd, &sendbuf);
+            RET_CHECK_BLACKLIST(-1, ret, "msg_regist_send");
+            // 获取服务端的回复信息
+            ret = msg_regist_recv(program_stat->connect_fd, &recvbuf);
+            RET_CHECK_BLACKLIST(-1, ret, "msg_regist_recv");
+            if (DISAPPROVE == recvbuf.approve) { // 说明服务端拒绝了该用户名
+                printf("[REGIST] 无法使用该用户名. 请重试.\n");
+            }
         }
     }
 
     // 获取密码并进行正式注册
-    int pwd_check = DISAPPROVE;
-    char pwd_plaintext[64] = {0};
     char *pwd_plaintext_p = NULL;
     while (DISAPPROVE == pwd_check) {
         // 第一次从用户输入中获取密码
@@ -104,7 +113,7 @@ int msg_regist(struct program_stat_t *program_stat) {
     // 在密码本地核验通过的情况下, 向服务端正式提交注册申请
     if (APPROVE == pwd_check) {
         // 对密码进行确认码异或
-        for(int i = 0; i < strlen(pwd_plaintext); i++) {
+        for (int i = 0; i < strlen(pwd_plaintext); i++) {
             pwd_plaintext[i] = pwd_plaintext[i] ^ program_stat->confirm[i];
         }
         // 对异或后的密码进行 rsa 加密

@@ -19,12 +19,16 @@ int connect_msg_handle(struct program_stat_t *program_stat) {
     case MT_LOGIN:
         logging(LOG_INFO, "执行登录请求.");
         ret = msg_login(program_stat, cmd);
-        RET_CHECK_BLACKLIST(-1, ret, "msg_login");
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msg_login 执行出错.");
+        }
         break;
     case MT_REGIST:
         logging(LOG_INFO, "执行注册请求.");
-        ret = msg_regist(program_stat);
-        RET_CHECK_BLACKLIST(-1, ret, "msg_regist");
+        ret = msg_regist(program_stat, cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msg_regist 执行出错.");
+        }
         break;
     case MT_RECONN:
         logging(LOG_INFO, "执行连接请求.");
