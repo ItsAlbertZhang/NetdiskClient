@@ -4,9 +4,9 @@
 #include "program_init.h"
 #include "thread_main.h"
 
-int connect_init(const char *config_dir, int epollit) {
+int connect_init(const char *config_dir) {
     int ret = 0;
-    char config[10][256];
+    char config[MAX_CONFIG_ROWS][MAX_CONFIG_LENGTH];
 
     // 获取 tcp 配置
     ret = getconfig(config_dir, "tcp.config", config);
@@ -24,12 +24,6 @@ int connect_init(const char *config_dir, int epollit) {
     if (-1 == ret) {
         logging(LOG_ERROR, "无法连接至服务端.");
         exit(0);
-    }
-
-    if (epollit) {
-        // 将建立的连接添加至 epoll 监听
-        ret = epoll_add(connect_fd);
-        RET_CHECK_BLACKLIST(-1, ret, "epoll_add");
     }
 
     return connect_fd;

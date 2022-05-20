@@ -51,8 +51,12 @@ int msg_dupconn(struct program_stat_t *program_stat, const char *cmd) {
     bzero(&recvbuf, sizeof(recvbuf));
     sendbuf.msgtype = MT_DUPCONN;
 
+    int connect_fd = connect_init(program_stat->config_dir);
+    RET_CHECK_BLACKLIST(-1, connect_fd, "connect_init");
     if (-1 == program_stat->connect_fd) {
-        program_stat->connect_fd = connect_init(program_stat->config_dir, 1);
+        program_stat->connect_fd = connect_fd;
+        ret = epoll_add(connect_fd);
+        RET_CHECK_BLACKLIST(-1, ret, "epoll_add");
     }
 
     // 加密

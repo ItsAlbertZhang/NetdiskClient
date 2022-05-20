@@ -3,6 +3,9 @@
 
 #include "head.h"
 
+#define MAX_CONFIG_ROWS 16
+#define MAX_CONFIG_LENGTH 256
+
 // 进程状态
 struct program_stat_t {
     char config_dir[1024];
