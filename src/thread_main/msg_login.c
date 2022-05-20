@@ -24,12 +24,12 @@ struct msg_login_recvbuf_t {
 static int msg_login_send(int connect_fd, const struct msg_login_sendbuf_t *sendbuf) {
     int ret = 0;
 
-    ret = send(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
-    ret = send(connect_fd, &sendbuf->username_len, sizeof(sendbuf->username_len) + sendbuf->username_len, 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
-    ret = send(connect_fd, &sendbuf->pwd_len, sizeof(sendbuf->pwd_len) + sendbuf->pwd_len, 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
+    ret = send_n(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, &sendbuf->username_len, sizeof(sendbuf->username_len) + sendbuf->username_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, &sendbuf->pwd_len, sizeof(sendbuf->pwd_len) + sendbuf->pwd_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
 
     return 0;
 }
@@ -46,7 +46,7 @@ static int msg_login_recv(int connect_fd, struct msg_login_recvbuf_t *recvbuf) {
     return 0;
 }
 
-int msg_login(struct program_stat_t *program_stat, const char *cmd) {
+int msg_login(const char *cmd) {
     int ret = 0;
 
     // 准备资源
@@ -60,7 +60,7 @@ int msg_login(struct program_stat_t *program_stat, const char *cmd) {
     char pwd_plaintext[64] = {0};
 
     ret = sscanf(cmd, "%*s%s%s", sendbuf.username, pwd_plaintext);
-    if(ret > 0) {
+    if (ret > 0) {
         sendbuf.username_len = strlen(sendbuf.username);
         if (strlen(pwd_plaintext) >= 3 || strlen(pwd_plaintext) <= 30) {
             pwd_check = APPROVE;
@@ -73,7 +73,7 @@ int msg_login(struct program_stat_t *program_stat, const char *cmd) {
         sendbuf.username_len = strlen(sendbuf.username);
     }
 
-    while(DISAPPROVE == pwd_check) {
+    while (DISAPPROVE == pwd_check) {
         char *pwd_plaintext_p = getpass("[LOGIN] 请输入密码(无回显), 可输入 exit 退出:");
         // 如果用户希望中断登录 (在 getpass 函数中无法通过 SIGINT 信号退出), 则跳出循环. 注意到此时会直接跳转到函数尾注册失败的情形.
         if (0 == strcmp(pwd_plaintext_p, "exit")) {
@@ -90,7 +90,7 @@ int msg_login(struct program_stat_t *program_stat, const char *cmd) {
 
     if (APPROVE == pwd_check) {
         // 对密码进行确认码异或
-        for(int i = 0; i < strlen(pwd_plaintext); i++) {
+        for (int i = 0; i < strlen(pwd_plaintext); i++) {
             pwd_plaintext[i] = pwd_plaintext[i] ^ program_stat->confirm[i];
         }
         // 对异或后的密码进行 rsa 加密
@@ -108,14 +108,14 @@ int msg_login(struct program_stat_t *program_stat, const char *cmd) {
 
     if (APPROVE == recvbuf.approve) {
         logging(LOG_INFO, "登录成功.");
-        ret = 0;
-    } else if (USERNAME_NOT_EXIST == recvbuf.approve){
+        ret = APPROVE;
+    } else if (USERNAME_NOT_EXIST == recvbuf.approve) {
         logging(LOG_WARN, "用户名不存在.");
-        ret = 0;
-    } else if(PWD_ERROR == recvbuf.approve) {
+        ret = USERNAME_NOT_EXIST;
+    } else if (PWD_ERROR == recvbuf.approve) {
         logging(LOG_WARN, "密码错误.");
-        ret = 0;
+        ret = PWD_ERROR;
     }
 
-    return 0;
+    return ret;
 }

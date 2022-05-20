@@ -3,7 +3,7 @@
 #include "main.h"
 #include "mylibrary.h"
 
-int program_init(struct program_stat_t *program_stat) {
+int program_init() {
     int ret = 0;
 
     // 获取配置文件目录

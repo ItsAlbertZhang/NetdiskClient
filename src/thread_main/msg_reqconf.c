@@ -24,12 +24,12 @@ struct msg_reqconf_recvbuf_t {
 static int msg_reqconf_send(int connect_fd, const struct msg_reqconf_sendbuf_t *sendbuf) {
     int ret = 0;
 
-    ret = send(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
-    ret = send(connect_fd, &sendbuf->clientpubrsa_len, sizeof(sendbuf->clientpubrsa_len) + sendbuf->clientpubrsa_len, 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
-    ret = send(connect_fd, &sendbuf->serverpub_md5_len, sizeof(sendbuf->serverpub_md5_len) + sendbuf->serverpub_md5_len, 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
+    ret = send_n(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, &sendbuf->clientpubrsa_len, sizeof(sendbuf->clientpubrsa_len) + sendbuf->clientpubrsa_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, &sendbuf->serverpub_md5_len, sizeof(sendbuf->serverpub_md5_len) + sendbuf->serverpub_md5_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
 
     return 0;
 }
@@ -56,7 +56,7 @@ static int msg_reqconf_recv(int connect_fd, struct msg_reqconf_recvbuf_t *recvbu
     return 0;
 }
 
-int msg_reqconf(struct program_stat_t *program_stat) {
+int msg_reqconf(void) {
     int ret = 0;
 
     // 准备资源
@@ -90,13 +90,13 @@ int msg_reqconf(struct program_stat_t *program_stat) {
     // 对接收到的确认码进行处理 (confirm 成员)
     strcpy(program_stat->confirm, recvbuf.confirm);
     sprintf(logbuf, "接收到来自服务器的确认码: %s", program_stat->confirm);
-    logging(LOG_DEBUG,logbuf); // 将确认码作为 DEBUG 信息打印
+    logging(LOG_DEBUG, logbuf); // 将确认码作为 DEBUG 信息打印
 
     // 对接收到的 token 进行处理
     ret = rsa_decrypt(program_stat->token, recvbuf.token_ciphertext, program_stat->private_rsa, PRIKEY);
     RET_CHECK_BLACKLIST(-1, ret, "rsa_decrypt");
     sprintf(logbuf, "接收到来自服务器的token: %s", program_stat->token);
-    logging(LOG_DEBUG,logbuf); // 将 token 作为 DEBUG 信息打印
+    logging(LOG_DEBUG, logbuf); // 将 token 作为 DEBUG 信息打印
 
     // 对可能接收到的服务端公钥进行处理 (serverpub_str 成员)
     if (recvbuf.serverpub_str_len) { // serverpub_str_len 不为 0, 本地公钥不存在或与服务端不匹配, 服务端向本地发送了一个新的密钥.

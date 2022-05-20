@@ -6,9 +6,9 @@
 
 int epfd = -1;
 
-int thread_main_handle(struct program_stat_t *program_stat) {
+int thread_main_handle(void) {
     int ret = 0;
-
+\
     // 初始化连接
     program_stat->connect_fd = connect_init(program_stat->config_dir);
     RET_CHECK_BLACKLIST(-1, program_stat->connect_fd, "connect_init");
@@ -25,7 +25,7 @@ int thread_main_handle(struct program_stat_t *program_stat) {
     bzero(&events, sizeof(events));
     int ep_ready = 0; // 有消息来流的监听个数
 
-    ret = msg_reqconf(program_stat); // 向服务端发送下发验证请求
+    ret = msg_reqconf(); // 向服务端发送下发验证请求
     RET_CHECK_BLACKLIST(-1, ret, "msg_reqconf");
     logging(LOG_INFO, "成功与服务端建立连接.");
 
@@ -42,7 +42,7 @@ int thread_main_handle(struct program_stat_t *program_stat) {
                 logging(LOG_DEBUG, "服务端连接已断开.");
             }
             if (events.data.fd == STDIN_FILENO) { // 消息来自 stdin
-                ret = connect_msg_handle(program_stat);
+                ret = connect_msg_handle();
                 RET_CHECK_BLACKLIST(-1, ret, "connect_msg_handle");
             }
         }

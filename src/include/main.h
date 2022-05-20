@@ -17,6 +17,8 @@ struct program_stat_t {
     char token[1024];
 };
 
+extern struct program_stat_t *program_stat;
+
 enum log_type {
     LOG_DEBUG,
     LOG_INFO,
@@ -25,8 +27,8 @@ enum log_type {
     LOG_FATAL,
 };
 
-int program_init(struct program_stat_t *program_stat);
+int program_init(void);
 
-int thread_main_handle(struct program_stat_t *program_stat);
+int thread_main_handle(void);
 
 #endif /* __MAIN_H__ */

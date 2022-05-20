@@ -22,12 +22,12 @@ struct msg_regist_recvbuf_t {
 static int msg_regist_send(int connect_fd, const struct msg_regist_sendbuf_t *sendbuf) {
     int ret = 0;
 
-    ret = send(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
-    ret = send(connect_fd, &sendbuf->username_len, sizeof(sendbuf->username_len) + sendbuf->username_len, 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
-    ret = send(connect_fd, &sendbuf->pwd_len, sizeof(sendbuf->pwd_len) + sendbuf->pwd_len, 0);
-    RET_CHECK_BLACKLIST(-1, ret, "send");
+    ret = send_n(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, &sendbuf->username_len, sizeof(sendbuf->username_len) + sendbuf->username_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, &sendbuf->pwd_len, sizeof(sendbuf->pwd_len) + sendbuf->pwd_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
 
     return 0;
 }
@@ -44,7 +44,7 @@ static int msg_regist_recv(int connect_fd, struct msg_regist_recvbuf_t *recvbuf)
     return 0;
 }
 
-int msg_regist(struct program_stat_t *program_stat, const char *cmd) {
+int msg_regist(const char *cmd) {
     int ret = 0;
 
     // 准备资源
