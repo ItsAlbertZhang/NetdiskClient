@@ -4,11 +4,11 @@
 #include "mylibrary.h"
 
 struct msg_login_sendbuf_t {
-    char msgtype;              // 消息类型
-    int username_len;          // 下一字段的长度
-    char username[30];         // 用户名
-    int pwd_len;               // 下一字段的长度
-    char pwd_ciphertext[1024]; // 密码密文
+    char msgtype;                  // 消息类型
+    int username_len;              // 下一字段的长度
+    char username[30];             // 用户名
+    int pwd_len;                   // 下一字段的长度
+    char pwd_ciphertext_rsa[1024]; // 密码密文
 };
 
 struct msg_login_recvbuf_t {
@@ -94,7 +94,7 @@ int msg_login(const char *cmd) {
             pwd_plaintext[i] = pwd_plaintext[i] ^ program_stat->confirm[i];
         }
         // 对异或后的密码进行 rsa 加密
-        sendbuf.pwd_len = rsa_encrypt(pwd_plaintext, sendbuf.pwd_ciphertext, program_stat->serverpub_rsa, PUBKEY);
+        sendbuf.pwd_len = rsa_encrypt(pwd_plaintext, sendbuf.pwd_ciphertext_rsa, program_stat->serverpub_rsa, PUBKEY);
         RET_CHECK_BLACKLIST(-1, sendbuf.pwd_len, "rsa_encrypt");
         // 销毁密码明文, 确保安全
         bzero(pwd_plaintext, sizeof(pwd_plaintext));
