@@ -3,7 +3,7 @@
 #include "main.h"
 #include "mylibrary.h"
 
-struct msg_reqconf_sendbuf_t {
+struct msg_conninit_sendbuf_t {
     char msgtype;             // 消息类型
     int clientpubrsa_len;     // 下一字段的长度
     char clientpubrsa[1024];  // 客户端公钥字符串
@@ -11,7 +11,7 @@ struct msg_reqconf_sendbuf_t {
     char serverpub_md5[1024]; // 客户端本地存储的服务端公钥字符串的 MD5 校验码
 };
 
-struct msg_reqconf_recvbuf_t {
+struct msg_conninit_recvbuf_t {
     char msgtype;                // 消息类型
     int confirm_len;             // 下一字段的长度
     char confirm[64];            // 会话确认码
@@ -21,7 +21,7 @@ struct msg_reqconf_recvbuf_t {
     char serverpub_str[1024];    // 服务端公钥. 当无需传输时, 此字段与上一字段置空.
 };
 
-static int msg_reqconf_send(int connect_fd, const struct msg_reqconf_sendbuf_t *sendbuf) {
+static int msg_conninit_send(int connect_fd, const struct msg_conninit_sendbuf_t *sendbuf) {
     int ret = 0;
 
     ret = send_n(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
@@ -34,10 +34,10 @@ static int msg_reqconf_send(int connect_fd, const struct msg_reqconf_sendbuf_t *
     return 0;
 }
 
-static int msg_reqconf_recv(int connect_fd, struct msg_reqconf_recvbuf_t *recvbuf) {
+static int msg_conninit_recv(int connect_fd, struct msg_conninit_recvbuf_t *recvbuf) {
     int ret = 0;
 
-    bzero(recvbuf, sizeof(struct msg_reqconf_recvbuf_t));
+    bzero(recvbuf, sizeof(struct msg_conninit_recvbuf_t));
     ret = recv_n(connect_fd, &recvbuf->msgtype, sizeof(recvbuf->msgtype), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
     ret = recv_n(connect_fd, &recvbuf->confirm_len, sizeof(recvbuf->confirm_len), 0);
@@ -56,15 +56,15 @@ static int msg_reqconf_recv(int connect_fd, struct msg_reqconf_recvbuf_t *recvbu
     return 0;
 }
 
-int msg_reqconf(void) {
+int msg_conninit(void) {
     int ret = 0;
 
     // 准备资源
-    struct msg_reqconf_sendbuf_t sendbuf;
-    struct msg_reqconf_recvbuf_t recvbuf;
+    struct msg_conninit_sendbuf_t sendbuf;
+    struct msg_conninit_recvbuf_t recvbuf;
     bzero(&sendbuf, sizeof(sendbuf));
     bzero(&recvbuf, sizeof(recvbuf));
-    sendbuf.msgtype = MT_REQCONF;
+    sendbuf.msgtype = MT_CONNINIT;
 
     // 将客户端公钥填入 sendbuf 结构体
     ret = rsa_rsa2str(sendbuf.clientpubrsa, program_stat->public_rsa, PUBKEY);
@@ -80,12 +80,12 @@ int msg_reqconf(void) {
     }
 
     // 发送消息
-    ret = msg_reqconf_send(program_stat->connect_fd, &sendbuf);
-    RET_CHECK_BLACKLIST(-1, ret, "msg_reqconf_send");
+    ret = msg_conninit_send(program_stat->connect_fd, &sendbuf);
+    RET_CHECK_BLACKLIST(-1, ret, "msg_conninit_send");
 
     // 接收消息
-    ret = msg_reqconf_recv(program_stat->connect_fd, &recvbuf);
-    RET_CHECK_BLACKLIST(-1, ret, "msg_reqconf_recv");
+    ret = msg_conninit_recv(program_stat->connect_fd, &recvbuf);
+    RET_CHECK_BLACKLIST(-1, ret, "msg_conninit_recv");
 
     // 对接收到的确认码进行处理 (confirm 成员)
     strcpy(program_stat->confirm, recvbuf.confirm);
@@ -100,8 +100,8 @@ int msg_reqconf(void) {
 
     // 对可能接收到的服务端公钥进行处理 (serverpub_str 成员)
     if (recvbuf.serverpub_str_len) { // serverpub_str_len 不为 0, 本地公钥不存在或与服务端不匹配, 服务端向本地发送了一个新的密钥.
-        logging(LOG_WARN, "[REQCONF] 本地公钥不存在或与服务端不匹配, 已重新从服务端下载公钥, 是否要使用并将其保存至本地?");
-        printf("[REQCONF] 请输入(y/n):");
+        logging(LOG_WARN, "[CONNINIT] 本地公钥不存在或与服务端不匹配, 已重新从服务端下载公钥, 是否要使用并将其保存至本地?");
+        printf("[CONNINIT] 请输入(y/n):");
         fflush(stdout);
         char savepubrsa_input;
         int savepubrsa = -1;

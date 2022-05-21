@@ -8,8 +8,8 @@ int epfd = -1;
 
 int thread_main_handle(void) {
     int ret = 0;
-\
-    // 初始化连接
+
+        // 初始化连接
     program_stat->connect_fd = connect_init(program_stat->config_dir);
     RET_CHECK_BLACKLIST(-1, program_stat->connect_fd, "connect_init");
     logging(LOG_INFO, "成功初始化连接.");
@@ -25,8 +25,8 @@ int thread_main_handle(void) {
     bzero(&events, sizeof(events));
     int ep_ready = 0; // 有消息来流的监听个数
 
-    ret = msg_reqconf(); // 向服务端发送下发验证请求
-    RET_CHECK_BLACKLIST(-1, ret, "msg_reqconf");
+    ret = msg_conninit(); // 向服务端发送下发验证请求
+    RET_CHECK_BLACKLIST(-1, ret, "msg_conninit");
     logging(LOG_INFO, "成功与服务端建立连接.");
 
     char program_running_flag = 1; // 程序继续运行标志

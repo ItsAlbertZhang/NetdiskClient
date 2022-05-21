@@ -13,7 +13,7 @@ int connect_msg_handle(void) {
     case MT_NULL:
         logging(LOG_WARN, "无效的命令.");
         break;
-    case MT_REQCONF:
+    case MT_CONNINIT:
         logging(LOG_INFO, "执行下发验证请求.");
         break;
     case MT_LOGIN:
