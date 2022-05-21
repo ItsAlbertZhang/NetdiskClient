@@ -13,8 +13,8 @@ struct program_stat_t {
     RSA *public_rsa;
     RSA *serverpub_rsa;
     int connect_fd;
-    char confirm[64];
-    char token[1024];
+    char token123[64];
+    int pretoken;
 };
 
 extern struct program_stat_t *program_stat;

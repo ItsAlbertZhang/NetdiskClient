@@ -12,13 +12,12 @@ struct msg_conninit_sendbuf_t {
 };
 
 struct msg_conninit_recvbuf_t {
-    char msgtype;                // 消息类型
-    int confirm_len;             // 下一字段的长度
-    char confirm[64];            // 会话确认码
-    int token_len;               // 下一字段的长度
-    char token_ciphertext[1024]; // token 密文, 用于客户端建立新连接时的短验证
-    int serverpub_str_len;       // 下一字段的长度
-    char serverpub_str[1024];    // 服务端公钥. 当无需传输时, 此字段与上一字段置空.
+    char msgtype;            // 消息类型
+    int pretoken;            // token 前缀, 其实质为最近一次连接时服务端的文件描述符
+    int token_ciprsa_len;    // 下一字段的长度
+    char token_ciprsa[1024]; // token 密文
+    int serverpubrsa_len;    // 下一字段的长度
+    char serverpubrsa[1024]; // 服务端公钥. 当无需传输时, 此字段与上一字段置空.
 };
 
 static int msg_conninit_send(int connect_fd, const struct msg_conninit_sendbuf_t *sendbuf) {
@@ -38,19 +37,21 @@ static int msg_conninit_recv(int connect_fd, struct msg_conninit_recvbuf_t *recv
     int ret = 0;
 
     bzero(recvbuf, sizeof(struct msg_conninit_recvbuf_t));
+
     ret = recv_n(connect_fd, &recvbuf->msgtype, sizeof(recvbuf->msgtype), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
-    ret = recv_n(connect_fd, &recvbuf->confirm_len, sizeof(recvbuf->confirm_len), 0);
+
+    ret = recv_n(connect_fd, &recvbuf->pretoken, sizeof(recvbuf->pretoken), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
-    ret = recv_n(connect_fd, recvbuf->confirm, recvbuf->confirm_len, 0);
+
+    ret = recv_n(connect_fd, &recvbuf->token_ciprsa_len, sizeof(recvbuf->token_ciprsa_len), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
-    ret = recv_n(connect_fd, &recvbuf->token_len, sizeof(recvbuf->token_len), 0);
+    ret = recv_n(connect_fd, recvbuf->token_ciprsa, recvbuf->token_ciprsa_len, 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
-    ret = recv_n(connect_fd, recvbuf->token_ciphertext, recvbuf->token_len, 0);
+
+    ret = recv_n(connect_fd, &recvbuf->serverpubrsa_len, sizeof(recvbuf->serverpubrsa_len), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
-    ret = recv_n(connect_fd, &recvbuf->serverpub_str_len, sizeof(recvbuf->serverpub_str_len), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv");
-    ret = recv_n(connect_fd, recvbuf->serverpub_str, recvbuf->serverpub_str_len, 0);
+    ret = recv_n(connect_fd, recvbuf->serverpubrsa, recvbuf->serverpubrsa_len, 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
 
     return 0;
@@ -87,19 +88,17 @@ int msg_conninit(void) {
     ret = msg_conninit_recv(program_stat->connect_fd, &recvbuf);
     RET_CHECK_BLACKLIST(-1, ret, "msg_conninit_recv");
 
-    // 对接收到的确认码进行处理 (confirm 成员)
-    strcpy(program_stat->confirm, recvbuf.confirm);
-    sprintf(logbuf, "接收到来自服务器的确认码: %s", program_stat->confirm);
-    logging(LOG_DEBUG, logbuf); // 将确认码作为 DEBUG 信息打印
-
     // 对接收到的 token 进行处理
-    ret = rsa_decrypt(program_stat->token, recvbuf.token_ciphertext, program_stat->private_rsa, PRIKEY);
+    program_stat->pretoken = recvbuf.pretoken; // token 前缀
+    char token_plain[1024] = {0};
+    ret = rsa_decrypt(token_plain, recvbuf.token_ciprsa, program_stat->private_rsa, PRIKEY);
     RET_CHECK_BLACKLIST(-1, ret, "rsa_decrypt");
-    sprintf(logbuf, "接收到来自服务器的token: %s", program_stat->token);
+    strcpy(program_stat->token123, token_plain);
+    sprintf(logbuf, "接收到来自服务器的 token: %s", program_stat->token123);
     logging(LOG_DEBUG, logbuf); // 将 token 作为 DEBUG 信息打印
 
     // 对可能接收到的服务端公钥进行处理 (serverpub_str 成员)
-    if (recvbuf.serverpub_str_len) { // serverpub_str_len 不为 0, 本地公钥不存在或与服务端不匹配, 服务端向本地发送了一个新的密钥.
+    if (recvbuf.serverpubrsa_len) { // serverpubrsa_len 不为 0, 本地公钥不存在或与服务端不匹配, 服务端向本地发送了一个新的密钥.
         logging(LOG_WARN, "[CONNINIT] 本地公钥不存在或与服务端不匹配, 已重新从服务端下载公钥, 是否要使用并将其保存至本地?");
         printf("[CONNINIT] 请输入(y/n):");
         fflush(stdout);
@@ -119,9 +118,9 @@ int msg_conninit(void) {
             }
         }
         if (1 == savepubrsa) { // 用户同意将服务端公钥保存并覆盖至本地
-            ret = rsa_str2rsa(recvbuf.serverpub_str, &program_stat->serverpub_rsa, PUBKEY);
+            ret = rsa_str2rsa(recvbuf.serverpubrsa, &program_stat->serverpub_rsa, PUBKEY);
             RET_CHECK_BLACKLIST(-1, ret, "rsa_str2rsa");
-            write_file_from_string(recvbuf.serverpub_str, recvbuf.serverpub_str_len, program_stat->config_dir, "serverpub.pem");
+            write_file_from_string(recvbuf.serverpubrsa, recvbuf.serverpubrsa_len, program_stat->config_dir, "serverpub.pem");
             RET_CHECK_BLACKLIST(-1, ret, "write_file_from_string");
             logging(LOG_INFO, "成功保存服务端公钥至本地.");
         } else { // 用户拒绝来自服务端的公钥
@@ -129,6 +128,6 @@ int msg_conninit(void) {
             exit(0);
         }
     }
-
+    
     return 0;
 }
