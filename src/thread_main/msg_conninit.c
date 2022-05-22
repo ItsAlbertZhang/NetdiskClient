@@ -25,9 +25,13 @@ static int msg_conninit_send(int connect_fd, const struct msg_conninit_sendbuf_t
 
     ret = send_n(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
-    ret = send_n(connect_fd, &sendbuf->clientpubrsa_len, sizeof(sendbuf->clientpubrsa_len) + sendbuf->clientpubrsa_len, 0);
+    ret = send_n(connect_fd, &sendbuf->clientpubrsa_len, sizeof(sendbuf->clientpubrsa_len), 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
-    ret = send_n(connect_fd, &sendbuf->serverpub_md5_len, sizeof(sendbuf->serverpub_md5_len) + sendbuf->serverpub_md5_len, 0);
+    ret = send_n(connect_fd, sendbuf->clientpubrsa, sendbuf->clientpubrsa_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, &sendbuf->serverpub_md5_len, sizeof(sendbuf->serverpub_md5_len), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, sendbuf->serverpub_md5, sendbuf->serverpub_md5_len, 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
 
     return 0;

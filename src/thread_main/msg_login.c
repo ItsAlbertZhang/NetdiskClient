@@ -26,9 +26,13 @@ static int msg_login_send(int connect_fd, const struct msg_login_sendbuf_t *send
 
     ret = send_n(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
-    ret = send_n(connect_fd, &sendbuf->username_len, sizeof(sendbuf->username_len) + sendbuf->username_len, 0);
+    ret = send_n(connect_fd, &sendbuf->username_len, sizeof(sendbuf->username_len), 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
-    ret = send_n(connect_fd, &sendbuf->pwd_ciprsa_len, sizeof(sendbuf->pwd_ciprsa_len) + sendbuf->pwd_ciprsa_len, 0);
+    ret = send_n(connect_fd, sendbuf->username, sendbuf->username_len, 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, &sendbuf->pwd_ciprsa_len, sizeof(sendbuf->pwd_ciprsa_len), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, sendbuf->pwd_ciprsa, sendbuf->pwd_ciprsa_len, 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
 
     return 0;

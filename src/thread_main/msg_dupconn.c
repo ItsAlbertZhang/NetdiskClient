@@ -27,7 +27,9 @@ static int msg_dupconn_send(int connect_fd, const struct msg_dupconn_sendbuf_t *
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
     ret = send_n(connect_fd, &sendbuf->pretoken, sizeof(sendbuf->pretoken), 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
-    ret = send_n(connect_fd, &sendbuf->token_ciprsa_len, sizeof(sendbuf->token_ciprsa_len) + sendbuf->token_ciprsa_len, 0);
+    ret = send_n(connect_fd, &sendbuf->token_ciprsa_len, sizeof(sendbuf->token_ciprsa_len), 0);
+    RET_CHECK_BLACKLIST(-1, ret, "send_n");
+    ret = send_n(connect_fd, sendbuf->token_ciprsa, sendbuf->token_ciprsa_len, 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
 
     return 0;
