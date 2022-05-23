@@ -4,7 +4,7 @@
 #include "mylibrary.h"
 #include "thread_main.h"
 
-int connect_msg_handle(void) {
+int connect_sendmsg_handle(void) {
     int ret = 0;
     char cmd[1024] = {0};
     read(STDIN_FILENO, cmd, sizeof(cmd));
@@ -90,13 +90,7 @@ size_t send_n(int connect_fd, const void *buf, size_t len, int flags) {
 
     while (recved_len < len) {
         ret = send(connect_fd, p + recved_len, len - recved_len, flags);
-        // 进行发送时发现连接断开
-        if (ret < 1) {
-            int dupconn_ret = msg_dupconn(NULL);
-            if (-1 == dupconn_ret) {
-                logging(LOG_ERROR, "msg_dupconn 执行出错.");
-            }
-        }
+        RET_CHECK_BLACKLIST(-1, ret, "send");
         recved_len += ret;
     }
 }

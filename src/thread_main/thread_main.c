@@ -42,8 +42,8 @@ int thread_main_handle(void) {
                 logging(LOG_DEBUG, "服务端连接已断开.");
             }
             if (events.data.fd == STDIN_FILENO) { // 消息来自 stdin
-                ret = connect_msg_handle();
-                RET_CHECK_BLACKLIST(-1, ret, "connect_msg_handle");
+                ret = connect_sendmsg_handle();
+                RET_CHECK_BLACKLIST(-1, ret, "connect_sendmsg_handle");
             }
         }
     }
