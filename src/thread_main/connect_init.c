@@ -22,7 +22,7 @@ int connect_init(const char *config_dir) {
     server_addr.sin_addr.s_addr = inet_addr(config[0]);                              //设置服务端 IP
     ret = connect(connect_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)); //连接服务端
     if (-1 == ret) {
-        logging(LOG_ERROR, "无法连接至服务端.");
+        logging(LOG_FATAL, "无法连接至服务端.");
         exit(0);
     }
 

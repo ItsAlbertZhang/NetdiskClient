@@ -1,4 +1,5 @@
 #include "head.h"
+#include "main.h"
 #include "mylibrary.h"
 #include "program_init.h"
 

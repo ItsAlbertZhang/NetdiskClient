@@ -9,7 +9,7 @@ int epfd = -1;
 int thread_main_handle(void) {
     int ret = 0;
 
-        // 初始化连接
+    // 初始化连接
     program_stat->connect_fd = connect_init(program_stat->config_dir);
     RET_CHECK_BLACKLIST(-1, program_stat->connect_fd, "connect_init");
     logging(LOG_INFO, "成功初始化连接.");

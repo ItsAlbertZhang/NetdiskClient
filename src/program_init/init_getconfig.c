@@ -1,4 +1,5 @@
 #include "head.h"
+#include "main.h"
 #include "program_init.h"
 
 int init_getconfig() {
