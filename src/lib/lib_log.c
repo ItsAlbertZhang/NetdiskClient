@@ -1,4 +1,5 @@
 #include "head.h"
+#include "mylibrary.h"
 
 char logbuf[4096] = {0};
 

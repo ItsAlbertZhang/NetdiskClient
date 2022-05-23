@@ -93,9 +93,9 @@ int msg_login(const char *cmd) {
     }
 
     if (APPROVE == pwd_check) {
-        // 对密码进行 token 异或
+        // 对密码进行 token2nd 异或
         for (int i = 0; i < strlen(pwd_plaintext); i++) {
-            pwd_plaintext[i] = pwd_plaintext[i] ^ program_stat->token123[i];
+            pwd_plaintext[i] = pwd_plaintext[i] ^ program_stat->token2nd[i];
         }
         // 对异或后的密码进行 rsa 加密
         sendbuf.pwd_ciprsa_len = rsa_encrypt(pwd_plaintext, sendbuf.pwd_ciprsa, program_stat->serverpub_rsa, PUBKEY);

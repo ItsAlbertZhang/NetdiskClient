@@ -12,6 +12,14 @@ int read_string_from_file(char *str, int maxlen, const char *dir, const char *fi
 // 将字符串写入文件, 长度为 len, 返回值为实际写入长度. dir 可以为 NULL.
 int write_file_from_string(const char *str, int len, const char *dir, const char *filename);
 
+// getconfig.c
+
+#define MAX_CONFIG_ROWS 16
+#define MAX_CONFIG_LENGTH 256
+
+// 获取配置文件
+int getconfig(const char *config_dir, const char *filename, char config[][MAX_CONFIG_LENGTH]);
+
 // rsa.c
 
 #define PRIKEY 0

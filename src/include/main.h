@@ -3,18 +3,13 @@
 
 #include "head.h"
 
-#define MAX_CONFIG_ROWS 16
-#define MAX_CONFIG_LENGTH 256
-
 // 进程状态
 struct program_stat_t {
     char config_dir[1024];
-    RSA *private_rsa;
-    RSA *public_rsa;
     RSA *serverpub_rsa;
     int connect_fd;
-    char token123[64];
-    int pretoken;
+    char token2nd[64];
+    int token1st;
 };
 
 extern struct program_stat_t *program_stat;

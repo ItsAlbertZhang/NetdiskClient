@@ -1,4 +1,5 @@
 #include "head.h"
+#include "mylibrary.h"
 
 int file_exist(const char *dir, const char *filename) {
     int ret = 0;

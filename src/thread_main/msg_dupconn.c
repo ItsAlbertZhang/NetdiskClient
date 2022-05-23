@@ -5,16 +5,16 @@
 #include "thread_main.h"
 
 struct msg_dupconn_sendbuf_t {
-    char msgtype;                // 消息类型
-    int pretoken;                // token 前缀
-    int token_ciprsa_len;               // 下一字段的长度
+    char msgtype;            // 消息类型
+    int token1st;            // token 前缀
+    int token_ciprsa_len;    // 下一字段的长度
     char token_ciprsa[1024]; // token 密文
 };
 
 struct msg_dupconn_recvbuf_t {
     char msgtype;    // 消息类型
     char approve;    // 批准标志
-    int newpretoken; // 可能为新的 token 前缀
+    int new_token1st; // 可能为新的 token 前缀
 };
 
 #define APPROVE 1
@@ -25,7 +25,7 @@ static int msg_dupconn_send(int connect_fd, const struct msg_dupconn_sendbuf_t *
 
     ret = send_n(connect_fd, &sendbuf->msgtype, sizeof(sendbuf->msgtype), 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
-    ret = send_n(connect_fd, &sendbuf->pretoken, sizeof(sendbuf->pretoken), 0);
+    ret = send_n(connect_fd, &sendbuf->token1st, sizeof(sendbuf->token1st), 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
     ret = send_n(connect_fd, &sendbuf->token_ciprsa_len, sizeof(sendbuf->token_ciprsa_len), 0);
     RET_CHECK_BLACKLIST(-1, ret, "send_n");
@@ -43,7 +43,7 @@ static int msg_dupconn_recv(int connect_fd, struct msg_dupconn_recvbuf_t *recvbu
     RET_CHECK_BLACKLIST(-1, ret, "recv");
     ret = recv_n(connect_fd, &recvbuf->approve, sizeof(recvbuf->approve), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
-    ret = recv_n(connect_fd, &recvbuf->newpretoken, sizeof(recvbuf->newpretoken), 0);
+    ret = recv_n(connect_fd, &recvbuf->new_token1st, sizeof(recvbuf->new_token1st), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
     return 0;
 }
@@ -69,8 +69,8 @@ int msg_dupconn(const char *cmd) {
     }
 
     // 加密
-    sendbuf.pretoken = program_stat->pretoken;
-    sendbuf.token_ciprsa_len = rsa_encrypt(program_stat->token123, sendbuf.token_ciprsa, program_stat->serverpub_rsa, PUBKEY);
+    sendbuf.token1st = program_stat->token1st;
+    sendbuf.token_ciprsa_len = rsa_encrypt(program_stat->token2nd, sendbuf.token_ciprsa, program_stat->serverpub_rsa, PUBKEY);
 
     // 向服务端发送信息.
     ret = msg_dupconn_send(connect_fd, &sendbuf);
@@ -80,8 +80,8 @@ int msg_dupconn(const char *cmd) {
     RET_CHECK_BLACKLIST(-1, ret, "msg_dupconn_recv");
 
     if (APPROVE == recvbuf.approve) {
-        if (recvbuf.newpretoken) {
-            program_stat->pretoken = recvbuf.newpretoken;
+        if (recvbuf.new_token1st) {
+            program_stat->token1st = recvbuf.new_token1st;
         }
         logging(LOG_INFO, "拷贝连接成功.");
         ret = 0;

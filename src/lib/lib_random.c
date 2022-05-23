@@ -1,4 +1,5 @@
 #include "head.h"
+#include "mylibrary.h"
 
 static char random_gen_char(const char *alphanum, int strlen) { // Random string generator function.
     return alphanum[rand() % strlen];

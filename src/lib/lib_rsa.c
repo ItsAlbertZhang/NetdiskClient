@@ -1,4 +1,5 @@
 #include "head.h"
+#include "mylibrary.h"
 
 int rsa_encrypt(const unsigned char *plaintext, unsigned char *ciphertext, RSA *rsa, int rsa_type) {
     int ret = 0;

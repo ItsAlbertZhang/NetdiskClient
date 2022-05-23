@@ -13,7 +13,7 @@ struct msg_conninit_sendbuf_t {
 
 struct msg_conninit_recvbuf_t {
     char msgtype;            // 消息类型
-    int pretoken;            // token 前缀, 其实质为最近一次连接时服务端的文件描述符
+    int token1st;            // token 前缀, 其实质为最近一次连接时服务端的文件描述符
     int token_ciprsa_len;    // 下一字段的长度
     char token_ciprsa[1024]; // token 密文
     int serverpubrsa_len;    // 下一字段的长度
@@ -45,7 +45,7 @@ static int msg_conninit_recv(int connect_fd, struct msg_conninit_recvbuf_t *recv
     ret = recv_n(connect_fd, &recvbuf->msgtype, sizeof(recvbuf->msgtype), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
 
-    ret = recv_n(connect_fd, &recvbuf->pretoken, sizeof(recvbuf->pretoken), 0);
+    ret = recv_n(connect_fd, &recvbuf->token1st, sizeof(recvbuf->token1st), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
 
     ret = recv_n(connect_fd, &recvbuf->token_ciprsa_len, sizeof(recvbuf->token_ciprsa_len), 0);
@@ -61,6 +61,8 @@ static int msg_conninit_recv(int connect_fd, struct msg_conninit_recvbuf_t *recv
     return 0;
 }
 
+static RSA *client_rsa;
+
 int msg_conninit(void) {
     int ret = 0;
 
@@ -71,8 +73,17 @@ int msg_conninit(void) {
     bzero(&recvbuf, sizeof(recvbuf));
     sendbuf.msgtype = MT_CONNINIT;
 
+    // 初始化客户端密钥
+    BIGNUM *bne = NULL;
+    unsigned long e = RSA_F4;
+    bne = BN_new();
+    BN_set_word(bne, e);
+    client_rsa = RSA_new();
+    RSA_generate_key_ex(client_rsa, 2048, bne, NULL);
+    BN_free(bne);
+
     // 将客户端公钥填入 sendbuf 结构体
-    ret = rsa_rsa2str(sendbuf.clientpubrsa, program_stat->public_rsa, PUBKEY);
+    ret = rsa_rsa2str(sendbuf.clientpubrsa, client_rsa, PUBKEY);
     sendbuf.clientpubrsa_len = strlen(sendbuf.clientpubrsa);
 
     // 若已在初始化阶段成功获取服务端公钥, 则将其转换为字符串并计算 MD5 校验码, 填入 sendbuf 结构体中的 serverpub_md5 成员中.
@@ -93,13 +104,13 @@ int msg_conninit(void) {
     RET_CHECK_BLACKLIST(-1, ret, "msg_conninit_recv");
 
     // 对接收到的 token 进行处理
-    program_stat->pretoken = recvbuf.pretoken; // token 前缀
+    program_stat->token1st = recvbuf.token1st; // token 第 1 部分
     char token_plain[1024] = {0};
-    ret = rsa_decrypt(token_plain, recvbuf.token_ciprsa, program_stat->private_rsa, PRIKEY);
+    ret = rsa_decrypt(token_plain, recvbuf.token_ciprsa, client_rsa, PRIKEY);
     RET_CHECK_BLACKLIST(-1, ret, "rsa_decrypt");
-    strcpy(program_stat->token123, token_plain);
-    sprintf(logbuf, "接收到来自服务器的 token: %s", program_stat->token123);
-    logging(LOG_DEBUG, logbuf); // 将 token 作为 DEBUG 信息打印
+    strcpy(program_stat->token2nd, token_plain);
+    sprintf(logbuf, "接收到来自服务器的 token2nd: %s", program_stat->token2nd);
+    logging(LOG_DEBUG, logbuf); // 将 token 第二部分 作为 DEBUG 信息打印
 
     // 对可能接收到的服务端公钥进行处理 (serverpub_str 成员)
     if (recvbuf.serverpubrsa_len) { // serverpubrsa_len 不为 0, 本地公钥不存在或与服务端不匹配, 服务端向本地发送了一个新的密钥.
@@ -132,6 +143,7 @@ int msg_conninit(void) {
             exit(0);
         }
     }
-    
+
+    RSA_free(client_rsa);
     return 0;
 }

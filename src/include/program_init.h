@@ -3,13 +3,14 @@
 
 #include "head.h"
 #include "main.h"
+#include "mylibrary.h"
 
 // 读取配置文件前, 获取配置文件目录
-int init_getconfig(char *dir, int dirlen);
+int init_getconfig(void);
 // 读取配置文件
 int getconfig(const char *config_dir, const char *filename, char config[][MAX_CONFIG_LENGTH]);
 
 // 初始化并获取 rsa 密钥
-int init_rsa_keys(RSA **private_rsa, RSA **public_rsa, RSA **serverpub_rsa, const char *config_dir);
+int init_rsa_keys(void);
 
 #endif /* __PROGRAM_INIT_H__ */
