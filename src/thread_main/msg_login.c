@@ -105,7 +105,6 @@ int msg_login(const char *cmd) {
         // 向服务端发送登录信息.
         ret = msg_login_send(program_stat->connect_fd, &sendbuf);
         RET_CHECK_BLACKLIST(-1, ret, "msg_login_send");
-        printf("here\n");
         // 获取服务端的回复信息.
         ret = msg_login_recv(program_stat->connect_fd, &recvbuf);
         RET_CHECK_BLACKLIST(-1, ret, "msg_login_recv");
