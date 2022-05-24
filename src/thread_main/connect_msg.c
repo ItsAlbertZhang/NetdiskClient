@@ -37,11 +37,12 @@ int connect_sendmsg_handle(void) {
             logging(LOG_ERROR, "msgsend_dupconn 执行出错.");
         }
         break;
-    case MT_COMM_S:
-        logging(LOG_INFO, "执行短命令请求.");
-        break;
-    case MT_COMM_L:
-        logging(LOG_INFO, "执行长命令请求.");
+    case MT_CS_PWD:
+        logging(LOG_INFO, "执行 pwd 命令请求.");
+        ret = msgsend_cs_pwd();
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_cs_pwd 执行出错.");
+        }
         break;
     default:
         break;
@@ -79,6 +80,10 @@ int connect_recvmsg_handle(void) {
         case MT_DUPCONN:
             logging(LOG_INFO, "收到拷贝连接请求的回复.");
             msgrecv_dupconn(program_stat->connect_fd);
+            break;
+        case MT_CS_PWD:
+            logging(LOG_INFO, "收到 pwd 命令请求的回复.");
+            msgrecv_cs_pwd();
             break;
         default:
             break;
@@ -145,6 +150,9 @@ int connect_sendmsg_cmdtype(char *cmd) {
     }
     if (!strncmp(cmd, "dup", strlen("dup"))) {
         return MT_DUPCONN;
+    }
+    if (!strncmp(cmd, "pwd", strlen("pwd"))) {
+        return MT_CS_PWD;
     }
 
     return 0;
