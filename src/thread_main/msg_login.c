@@ -42,22 +42,18 @@ static int msg_login_recv(int connect_fd, struct msg_login_recvbuf_t *recvbuf) {
     int ret = 0;
 
     bzero(recvbuf, sizeof(struct msg_login_recvbuf_t));
-    ret = recv_n(connect_fd, &recvbuf->msgtype, sizeof(recvbuf->msgtype), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv");
     ret = recv_n(connect_fd, &recvbuf->approve, sizeof(recvbuf->approve), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
 
     return 0;
 }
 
-int msg_login(const char *cmd) {
+int msgsend_login(const char *cmd) {
     int ret = 0;
 
     // 准备资源
     struct msg_login_sendbuf_t sendbuf;
-    struct msg_login_recvbuf_t recvbuf;
     bzero(&sendbuf, sizeof(sendbuf));
-    bzero(&recvbuf, sizeof(recvbuf));
     sendbuf.msgtype = MT_LOGIN;
 
     char pwd_plaintext[64] = {0};
@@ -81,6 +77,17 @@ int msg_login(const char *cmd) {
     // 向服务端发送登录信息
     ret = msg_login_send(program_stat->connect_fd, &sendbuf);
     RET_CHECK_BLACKLIST(-1, ret, "msg_login_send");
+
+    return 0;
+}
+
+int msgrecv_login(void) {
+    int ret = 0;
+
+    // 准备资源
+    struct msg_login_recvbuf_t recvbuf;
+    bzero(&recvbuf, sizeof(recvbuf));
+
     // 获取服务端的回复信息.
     ret = msg_login_recv(program_stat->connect_fd, &recvbuf);
     RET_CHECK_BLACKLIST(-1, ret, "msg_login_recv");

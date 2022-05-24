@@ -15,6 +15,10 @@ enum msg_type {
     MT_COMM_L,   // 长命令请求
 };
 
+// 消息处理函数
+int connect_sendmsg_handle(void);
+int connect_recvmsg_handle(void);
+
 // 循环接收, 避免因网络数据分包导致的错误
 size_t recv_n(int connect_fd, void *buf, size_t len, int flags);
 
@@ -22,18 +26,22 @@ size_t recv_n(int connect_fd, void *buf, size_t len, int flags);
 size_t send_n(int connect_fd, const void *buf, size_t len, int flags);
 
 // 判断命令类型
-int connect_msg_cmdtype(char *cmd);
+int connect_sendmsg_cmdtype(char *cmd);
 
 // 下发验证请求
-int msg_conninit(void);
+int msgsend_conninit(void);
+int msgrecv_conninit(void);
 
 // 注册请求
-int msg_regist(const char *cmd);
+int msgsend_regist(const char *cmd);
+int msgrecv_regist(void);
 
 // 登录请求
-int msg_login(const char *cmd);
+int msgsend_login(const char *cmd);
+int msgrecv_login(void);
 
 // 拷贝连接请求
-int msg_dupconn(const char *cmd);
+int msgsend_dupconn(void);
+int msgrecv_dupconn(int connect_fd);
 
 #endif /* __CONNECT_MSG_H__ */

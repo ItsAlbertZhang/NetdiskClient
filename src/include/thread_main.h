@@ -6,9 +6,6 @@
 
 extern int epfd;
 
-// 消息处理函数
-int connect_sendmsg_handle(void);
-
 // 初始化连接
 int connect_init(const char *config_dir);
 

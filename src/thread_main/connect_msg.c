@@ -8,7 +8,7 @@ int connect_sendmsg_handle(void) {
     int ret = 0;
     char cmd[1024] = {0};
     read(STDIN_FILENO, cmd, sizeof(cmd));
-    int cmdtype = connect_msg_cmdtype(cmd);
+    int cmdtype = connect_sendmsg_cmdtype(cmd);
     switch (cmdtype) {
     case MT_NULL:
         logging(LOG_WARN, "无效的命令.");
@@ -16,25 +16,25 @@ int connect_sendmsg_handle(void) {
     case MT_CONNINIT:
         logging(LOG_INFO, "执行下发验证请求.");
         break;
-    case MT_LOGIN:
-        logging(LOG_INFO, "执行登录请求.");
-        ret = msg_login(cmd);
-        if (-1 == ret) {
-            logging(LOG_ERROR, "msg_login 执行出错.");
-        }
-        break;
     case MT_REGIST:
         logging(LOG_INFO, "执行注册请求.");
-        ret = msg_regist(cmd);
+        ret = msgsend_regist(cmd);
         if (-1 == ret) {
-            logging(LOG_ERROR, "msg_regist 执行出错.");
+            logging(LOG_ERROR, "msgsend_regist 执行出错.");
+        }
+        break;
+    case MT_LOGIN:
+        logging(LOG_INFO, "执行登录请求.");
+        ret = msgsend_login(cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_login 执行出错.");
         }
         break;
     case MT_DUPCONN:
         logging(LOG_INFO, "执行拷贝连接请求.");
-        ret = msg_dupconn(cmd);
+        ret = msgsend_dupconn();
         if (-1 == ret) {
-            logging(LOG_ERROR, "msg_dupconn 执行出错.");
+            logging(LOG_ERROR, "msgsend_dupconn 执行出错.");
         }
         break;
     case MT_COMM_S:
@@ -45,6 +45,44 @@ int connect_sendmsg_handle(void) {
         break;
     default:
         break;
+    }
+
+    return 0;
+}
+
+int connect_recvmsg_handle(void) {
+    int ret = 0;
+    char msgtype; // 消息类型
+    // 接受来自服务端的消息类型标志
+    ret = recv_n(program_stat->connect_fd, &msgtype, 1, 0);
+    if (0 == ret) {
+        // 对方已断开连接
+        ret = epoll_del(program_stat->connect_fd); // 将 socket_fd 添加至 epoll 监听
+        RET_CHECK_BLACKLIST(-1, ret, "epoll_del");
+        close(program_stat->connect_fd);
+        program_stat->connect_fd = -1;
+        logging(LOG_DEBUG, "服务端连接已断开.");
+    } else {
+        switch (msgtype) {
+        case MT_CONNINIT:
+            logging(LOG_INFO, "收到下发验证请求的回复.");
+            msgrecv_conninit();
+            break;
+        case MT_REGIST:
+            logging(LOG_INFO, "收到注册请求的回复.");
+            msgrecv_regist();
+            break;
+        case MT_LOGIN:
+            logging(LOG_INFO, "收到登录请求的回复.");
+            msgrecv_login();
+            break;
+        case MT_DUPCONN:
+            logging(LOG_INFO, "收到拷贝连接请求的回复.");
+            msgrecv_dupconn(program_stat->connect_fd);
+            break;
+        default:
+            break;
+        }
     }
 
     return 0;
@@ -78,9 +116,9 @@ size_t send_n(int connect_fd, const void *buf, size_t len, int flags) {
         // 则第二次调用 send_n 时, 连接已经恢复, 但传入的 connect_fd 依旧为 -1.
         // 只有当连接真的没有恢复时, 才执行 dupconn.
         if (-1 == program_stat->connect_fd) {
-            int dupconn_ret = msg_dupconn(NULL);
+            int dupconn_ret = msgsend_dupconn();
             if (-1 == dupconn_ret) {
-                logging(LOG_ERROR, "msg_dupconn 执行出错.");
+                logging(LOG_ERROR, "msgsend_dupconn 执行出错.");
             }
         }
         // 传入的 connect_fd 为 -1, 说明调用 send_n 的函数欲发送数据的对端一定是主线程连接(而非子线程连接).
@@ -96,7 +134,7 @@ size_t send_n(int connect_fd, const void *buf, size_t len, int flags) {
 }
 
 // 判断命令类型
-int connect_msg_cmdtype(char *cmd) {
+int connect_sendmsg_cmdtype(char *cmd) {
     int ret = 0;
 
     if (!strncmp(cmd, "regist", strlen("regist"))) {

@@ -12,8 +12,8 @@ struct msg_dupconn_sendbuf_t {
 };
 
 struct msg_dupconn_recvbuf_t {
-    char msgtype;    // 消息类型
-    char approve;    // 批准标志
+    char msgtype;     // 消息类型
+    char approve;     // 批准标志
     int new_token1st; // 可能为新的 token 前缀
 };
 
@@ -39,8 +39,6 @@ static int msg_dupconn_recv(int connect_fd, struct msg_dupconn_recvbuf_t *recvbu
     int ret = 0;
 
     bzero(recvbuf, sizeof(struct msg_dupconn_recvbuf_t));
-    ret = recv_n(connect_fd, &recvbuf->msgtype, sizeof(recvbuf->msgtype), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv");
     ret = recv_n(connect_fd, &recvbuf->approve, sizeof(recvbuf->approve), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
     ret = recv_n(connect_fd, &recvbuf->new_token1st, sizeof(recvbuf->new_token1st), 0);
@@ -48,14 +46,12 @@ static int msg_dupconn_recv(int connect_fd, struct msg_dupconn_recvbuf_t *recvbu
     return 0;
 }
 
-int msg_dupconn(const char *cmd) {
+int msgsend_dupconn(void) {
     int ret = 0;
 
     // 准备资源
     struct msg_dupconn_sendbuf_t sendbuf;
-    struct msg_dupconn_recvbuf_t recvbuf;
     bzero(&sendbuf, sizeof(sendbuf));
-    bzero(&recvbuf, sizeof(recvbuf));
     sendbuf.msgtype = MT_DUPCONN;
 
     // 建立新连接
@@ -75,6 +71,18 @@ int msg_dupconn(const char *cmd) {
     // 向服务端发送信息.
     ret = msg_dupconn_send(connect_fd, &sendbuf);
     RET_CHECK_BLACKLIST(-1, ret, "msg_dupconn_send");
+
+    // 返回新连接文件描述符
+    return connect_fd;
+}
+
+int msgrecv_dupconn(int connect_fd) {
+    int ret = 0;
+
+    // 准备资源
+    struct msg_dupconn_recvbuf_t recvbuf;
+    bzero(&recvbuf, sizeof(recvbuf));
+
     // 获取服务端的回复信息.
     ret = msg_dupconn_recv(connect_fd, &recvbuf);
     RET_CHECK_BLACKLIST(-1, ret, "msg_dupconn_recv");
@@ -90,6 +98,5 @@ int msg_dupconn(const char *cmd) {
         return -1;
     }
 
-    // 返回新连接文件描述符
-    return connect_fd;
+    return 0;
 }

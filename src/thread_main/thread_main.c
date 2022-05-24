@@ -25,8 +25,8 @@ int thread_main_handle(void) {
     bzero(&events, sizeof(events));
     int ep_ready = 0; // 有消息来流的监听个数
 
-    ret = msg_conninit(); // 向服务端发送下发验证请求
-    RET_CHECK_BLACKLIST(-1, ret, "msg_conninit");
+    ret = msgsend_conninit(); // 向服务端发送下发验证请求
+    RET_CHECK_BLACKLIST(-1, ret, "msgsend_conninit");
     logging(LOG_INFO, "成功与服务端建立连接.");
 
     char program_running_flag = 1; // 程序继续运行标志
@@ -35,11 +35,8 @@ int thread_main_handle(void) {
         RET_CHECK_BLACKLIST(-1, ep_ready, "epoll_wait");
         for (int i = 0; i < ep_ready; i++) {
             if (events.data.fd == program_stat->connect_fd) { // 有来自服务端的消息, 说明服务端断开了连接
-                ret = epoll_del(program_stat->connect_fd);    // 将 socket_fd 添加至 epoll 监听
-                RET_CHECK_BLACKLIST(-1, ret, "epoll_del");
-                close(program_stat->connect_fd);
-                program_stat->connect_fd = -1;
-                logging(LOG_DEBUG, "服务端连接已断开.");
+                ret = connect_recvmsg_handle();
+                RET_CHECK_BLACKLIST(-1, ret, "connect_recvmsg_handle");
             }
             if (events.data.fd == STDIN_FILENO) { // 消息来自 stdin
                 ret = connect_sendmsg_handle();

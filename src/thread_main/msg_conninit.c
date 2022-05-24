@@ -42,9 +42,6 @@ static int msg_conninit_recv(int connect_fd, struct msg_conninit_recvbuf_t *recv
 
     bzero(recvbuf, sizeof(struct msg_conninit_recvbuf_t));
 
-    ret = recv_n(connect_fd, &recvbuf->msgtype, sizeof(recvbuf->msgtype), 0);
-    RET_CHECK_BLACKLIST(-1, ret, "recv");
-
     ret = recv_n(connect_fd, &recvbuf->token1st, sizeof(recvbuf->token1st), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
 
@@ -63,14 +60,12 @@ static int msg_conninit_recv(int connect_fd, struct msg_conninit_recvbuf_t *recv
 
 static RSA *client_rsa;
 
-int msg_conninit(void) {
+int msgsend_conninit(void) {
     int ret = 0;
 
     // 准备资源
     struct msg_conninit_sendbuf_t sendbuf;
-    struct msg_conninit_recvbuf_t recvbuf;
     bzero(&sendbuf, sizeof(sendbuf));
-    bzero(&recvbuf, sizeof(recvbuf));
     sendbuf.msgtype = MT_CONNINIT;
 
     // 初始化客户端密钥
@@ -98,6 +93,16 @@ int msg_conninit(void) {
     // 发送消息
     ret = msg_conninit_send(program_stat->connect_fd, &sendbuf);
     RET_CHECK_BLACKLIST(-1, ret, "msg_conninit_send");
+
+    return 0;
+}
+
+int msgrecv_conninit(void) {
+    int ret = 0;
+
+    // 准备资源
+    struct msg_conninit_recvbuf_t recvbuf;
+    bzero(&recvbuf, sizeof(recvbuf));
 
     // 接收消息
     ret = msg_conninit_recv(program_stat->connect_fd, &recvbuf);
@@ -145,5 +150,6 @@ int msg_conninit(void) {
     }
 
     RSA_free(client_rsa);
+
     return 0;
 }
