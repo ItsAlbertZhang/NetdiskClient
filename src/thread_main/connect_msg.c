@@ -44,6 +44,13 @@ int connect_sendmsg_handle(void) {
             logging(LOG_ERROR, "msgsend_cs_pwd 执行出错.");
         }
         break;
+    case MT_CS_LS:
+        logging(LOG_INFO, "执行 ld 命令请求.");
+        ret = msgsend_cs_ls();
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_cs_ls 执行出错.");
+        }
+        break;
     default:
         break;
     }
@@ -84,6 +91,10 @@ int connect_recvmsg_handle(void) {
         case MT_CS_PWD:
             logging(LOG_INFO, "收到 pwd 命令请求的回复.");
             msgrecv_cs_pwd();
+            break;
+        case MT_CS_LS:
+            logging(LOG_INFO, "收到 ls 命令请求的回复.");
+            msgrecv_cs_ls();
             break;
         default:
             break;
@@ -153,6 +164,9 @@ int connect_sendmsg_cmdtype(char *cmd) {
     }
     if (!strncmp(cmd, "pwd", strlen("pwd"))) {
         return MT_CS_PWD;
+    }
+    if (!strncmp(cmd, "ls", strlen("ls"))) {
+        return MT_CS_LS;
     }
 
     return 0;
