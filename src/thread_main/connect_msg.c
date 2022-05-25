@@ -45,10 +45,17 @@ int connect_sendmsg_handle(void) {
         }
         break;
     case MT_CS_LS:
-        logging(LOG_INFO, "执行 ld 命令请求.");
+        logging(LOG_INFO, "执行 ls 命令请求.");
         ret = msgsend_cs_ls();
         if (-1 == ret) {
             logging(LOG_ERROR, "msgsend_cs_ls 执行出错.");
+        }
+        break;
+    case MT_CS_CD:
+        logging(LOG_INFO, "执行 cd 命令请求.");
+        ret = msgsend_cs_cd(cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_cs_cd 执行出错.");
         }
         break;
     default:
@@ -95,6 +102,10 @@ int connect_recvmsg_handle(void) {
         case MT_CS_LS:
             logging(LOG_INFO, "收到 ls 命令请求的回复.");
             msgrecv_cs_ls();
+            break;
+        case MT_CS_CD:
+            logging(LOG_INFO, "收到 cd 命令请求的回复.");
+            msgrecv_cs_cd();
             break;
         default:
             break;
@@ -167,6 +178,9 @@ int connect_sendmsg_cmdtype(char *cmd) {
     }
     if (!strncmp(cmd, "ls", strlen("ls"))) {
         return MT_CS_LS;
+    }
+    if (!strncmp(cmd, "cd", strlen("cd"))) {
+        return MT_CS_CD;
     }
 
     return 0;

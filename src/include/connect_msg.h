@@ -13,6 +13,7 @@ enum msg_type {
     MT_DUPCONN,  // 拷贝连接请求
     MT_CS_PWD,   // 短命令(command short): pwd
     MT_CS_LS,    // 短命令(command short): ls
+    MT_CS_CD,    // 短命令(command short): cd
     MT_COMM_S,   // 短命令请求
     MT_COMM_L,   // 长命令请求
 };
@@ -53,5 +54,9 @@ int msgrecv_cs_pwd(void);
 // ls 命令请求
 int msgsend_cs_ls(void);
 int msgrecv_cs_ls(void);
+
+// cd 命令请求
+int msgsend_cs_cd(char *cmd);
+int msgrecv_cs_cd(void);
 
 #endif /* __CONNECT_MSG_H__ */
