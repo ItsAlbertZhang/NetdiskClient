@@ -58,6 +58,13 @@ int connect_sendmsg_handle(void) {
             logging(LOG_ERROR, "msgsend_cs_cd 执行出错.");
         }
         break;
+    case MT_CS_RM:
+        logging(LOG_INFO, "执行 rm 命令请求.");
+        ret = msgsend_cs_rm(cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_cs_rm 执行出错.");
+        }
+        break;
     default:
         break;
     }
@@ -106,6 +113,10 @@ int connect_recvmsg_handle(void) {
         case MT_CS_CD:
             logging(LOG_INFO, "收到 cd 命令请求的回复.");
             msgrecv_cs_cd();
+            break;
+        case MT_CS_RM:
+            logging(LOG_INFO, "收到 rm 命令请求的回复.");
+            msgrecv_cs_rm();
             break;
         default:
             break;
@@ -181,6 +192,9 @@ int connect_sendmsg_cmdtype(char *cmd) {
     }
     if (!strncmp(cmd, "cd", strlen("cd"))) {
         return MT_CS_CD;
+    }
+    if (!strncmp(cmd, "rm", strlen("rm"))) {
+        return MT_CS_RM;
     }
 
     return 0;
