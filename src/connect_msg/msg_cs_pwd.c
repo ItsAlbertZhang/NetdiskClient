@@ -61,7 +61,8 @@ int msgrecv_cs_pwd(void) {
     RET_CHECK_BLACKLIST(-1, ret, "msg_cs_pwd_recv");
 
     // 输出
-    printf("%s\n", recvbuf.pwd);
+    logging(LOG_OUTPUT, recvbuf.pwd);
+    // printf("%s\n", recvbuf.pwd);
 
     return 0;
 }

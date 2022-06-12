@@ -20,6 +20,8 @@ enum log_type {
     LOG_WARN,
     LOG_ERROR,
     LOG_FATAL,
+    LOG_INPUT,
+    LOG_OUTPUT,
 };
 
 int program_init(void);

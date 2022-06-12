@@ -15,6 +15,10 @@ enum msg_type {
     MT_CS_LS,    // 短命令(command short): ls
     MT_CS_CD,    // 短命令(command short): cd
     MT_CS_RM,    // 短命令(command short): rm
+    MT_CS_MV,    // 短命令(command short): mv
+    MT_CS_CP,    // 短命令(command short): cp
+    MT_CS_MKDIR, // 短命令(command short): mkdir
+    MT_CS_RMDIR, // 短命令(command short): rmdir
     MT_COMM_S,   // 短命令请求
     MT_COMM_L,   // 长命令请求
 };
@@ -63,5 +67,21 @@ int msgrecv_cs_cd(void);
 // rm 命令请求
 int msgsend_cs_rm(char *cmd);
 int msgrecv_cs_rm(void);
+
+// mv 命令请求
+int msgsend_cs_mv(char *cmd);
+int msgrecv_cs_mv(void);
+
+// cp 命令请求
+int msgsend_cs_cp(char *cmd);
+int msgrecv_cs_cp(void);
+
+// mkdir 命令请求
+int msgsend_cs_mkdir(char *cmd);
+int msgrecv_cs_mkdir(void);
+
+// rmdir 命令请求
+int msgsend_cs_rmdir(char *cmd);
+int msgrecv_cs_rmdir(void);
 
 #endif /* __CONNECT_MSG_H__ */

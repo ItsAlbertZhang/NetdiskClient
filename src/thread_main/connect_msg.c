@@ -65,6 +65,34 @@ int connect_sendmsg_handle(void) {
             logging(LOG_ERROR, "msgsend_cs_rm 执行出错.");
         }
         break;
+    case MT_CS_MV:
+        logging(LOG_INFO, "执行 mv 命令请求.");
+        ret = msgsend_cs_mv(cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_cs_mv 执行出错.");
+        }
+        break;
+    case MT_CS_CP:
+        logging(LOG_INFO, "执行 cp 命令请求.");
+        ret = msgsend_cs_cp(cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_cs_cp 执行出错.");
+        }
+        break;
+    case MT_CS_MKDIR:
+        logging(LOG_INFO, "执行 mkdir 命令请求.");
+        ret = msgsend_cs_mkdir(cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_cs_mkdir 执行出错.");
+        }
+        break;
+    case MT_CS_RMDIR:
+        logging(LOG_INFO, "执行 rmdir 命令请求.");
+        ret = msgsend_cs_rmdir(cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msgsend_cs_rmdir 执行出错.");
+        }
+        break;
     default:
         break;
     }
@@ -87,36 +115,52 @@ int connect_recvmsg_handle(void) {
     } else {
         switch (msgtype) {
         case MT_CONNINIT:
-            logging(LOG_INFO, "收到下发验证请求的回复.");
+            // logging(LOG_INFO, "收到下发验证请求的回复.");
             msgrecv_conninit();
             break;
         case MT_REGIST:
-            logging(LOG_INFO, "收到注册请求的回复.");
+            // logging(LOG_INFO, "收到注册请求的回复.");
             msgrecv_regist();
             break;
         case MT_LOGIN:
-            logging(LOG_INFO, "收到登录请求的回复.");
+            // logging(LOG_INFO, "收到登录请求的回复.");
             msgrecv_login();
             break;
         case MT_DUPCONN:
-            logging(LOG_INFO, "收到拷贝连接请求的回复.");
+            // logging(LOG_INFO, "收到拷贝连接请求的回复.");
             msgrecv_dupconn(program_stat->connect_fd);
             break;
         case MT_CS_PWD:
-            logging(LOG_INFO, "收到 pwd 命令请求的回复.");
+            // logging(LOG_INFO, "收到 pwd 命令请求的回复.");
             msgrecv_cs_pwd();
             break;
         case MT_CS_LS:
-            logging(LOG_INFO, "收到 ls 命令请求的回复.");
+            // logging(LOG_INFO, "收到 ls 命令请求的回复.");
             msgrecv_cs_ls();
             break;
         case MT_CS_CD:
-            logging(LOG_INFO, "收到 cd 命令请求的回复.");
+            // logging(LOG_INFO, "收到 cd 命令请求的回复.");
             msgrecv_cs_cd();
             break;
         case MT_CS_RM:
-            logging(LOG_INFO, "收到 rm 命令请求的回复.");
+            // logging(LOG_INFO, "收到 rm 命令请求的回复.");
             msgrecv_cs_rm();
+            break;
+        case MT_CS_MV:
+            // logging(LOG_INFO, "收到 mv 命令请求的回复.");
+            msgrecv_cs_mv();
+            break;
+        case MT_CS_CP:
+            // logging(LOG_INFO, "收到 cp 命令请求的回复.");
+            msgrecv_cs_cp();
+            break;
+        case MT_CS_MKDIR:
+            // logging(LOG_INFO, "收到 mkdir 命令请求的回复.");
+            msgrecv_cs_mkdir();
+            break;
+        case MT_CS_RMDIR:
+            // logging(LOG_INFO, "收到 rmdir 命令请求的回复.");
+            msgrecv_cs_rmdir();
             break;
         default:
             break;
@@ -193,8 +237,20 @@ int connect_sendmsg_cmdtype(char *cmd) {
     if (!strncmp(cmd, "cd", strlen("cd"))) {
         return MT_CS_CD;
     }
+    if (!strncmp(cmd, "rmdir", strlen("rmdir"))) {
+        return MT_CS_RMDIR;
+    }
     if (!strncmp(cmd, "rm", strlen("rm"))) {
         return MT_CS_RM;
+    }
+    if (!strncmp(cmd, "mv", strlen("mv"))) {
+        return MT_CS_MV;
+    }
+    if (!strncmp(cmd, "cp", strlen("cp"))) {
+        return MT_CS_CP;
+    }
+    if (!strncmp(cmd, "mkdir", strlen("mkdir"))) {
+        return MT_CS_MKDIR;
     }
 
     return 0;

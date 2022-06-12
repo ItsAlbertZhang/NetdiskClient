@@ -61,7 +61,8 @@ int msgrecv_cs_ls(void) {
     RET_CHECK_BLACKLIST(-1, ret, "msg_cs_ls_recv");
 
     // 输出
-    printf("%s", recvbuf.res);
+    logging(LOG_OUTPUT, recvbuf.res);
+    // printf("%s", recvbuf.res);
 
     return 0;
 }
