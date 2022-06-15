@@ -12,7 +12,7 @@ BIN = netdisk_client
 # 获取工程根目录
 ROOT_DIR = $(shell pwd)
 # 编译选项
-CFLAGS = -I $(ROOT_DIR)/$(SRC_DIR)/include -DDEBUG
+CFLAGS = -I $(ROOT_DIR)/$(SRC_DIR)/include
 # 链接选项
 LFLAGS = -lpthread -lssl -lcrypto
 
