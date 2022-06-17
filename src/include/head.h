@@ -12,7 +12,7 @@
 #include <openssl/md5.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
-// #include <pthread.h>
+#include <pthread.h>
 // #include <pwd.h>
 // #include <signal.h>
 #include <stdio.h>

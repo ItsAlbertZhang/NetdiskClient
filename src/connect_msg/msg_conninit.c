@@ -13,7 +13,7 @@ struct msg_conninit_sendbuf_t {
 
 struct msg_conninit_recvbuf_t {
     char msgtype;            // 消息类型
-    int token1st;            // token 前缀, 其实质为最近一次连接时服务端的文件描述符
+    int pretoken;            // token 前缀, 其实质为最近一次连接时服务端的文件描述符
     int token_ciprsa_len;    // 下一字段的长度
     char token_ciprsa[1024]; // token 密文
     int serverpubrsa_len;    // 下一字段的长度
@@ -42,7 +42,7 @@ static int msg_conninit_recv(int connect_fd, struct msg_conninit_recvbuf_t *recv
 
     bzero(recvbuf, sizeof(struct msg_conninit_recvbuf_t));
 
-    ret = recv_n(connect_fd, &recvbuf->token1st, sizeof(recvbuf->token1st), 0);
+    ret = recv_n(connect_fd, &recvbuf->pretoken, sizeof(recvbuf->pretoken), 0);
     RET_CHECK_BLACKLIST(-1, ret, "recv");
 
     ret = recv_n(connect_fd, &recvbuf->token_ciprsa_len, sizeof(recvbuf->token_ciprsa_len), 0);
@@ -109,12 +109,12 @@ int msgrecv_conninit(void) {
     RET_CHECK_BLACKLIST(-1, ret, "msg_conninit_recv");
 
     // 对接收到的 token 进行处理
-    program_stat->token1st = recvbuf.token1st; // token 第 1 部分
+    program_stat->pretoken = recvbuf.pretoken; // token 第 1 部分
     char token_plain[1024] = {0};
     ret = rsa_decrypt(token_plain, recvbuf.token_ciprsa, client_rsa, PRIKEY);
     RET_CHECK_BLACKLIST(-1, ret, "rsa_decrypt");
-    strcpy(program_stat->token2nd, token_plain);
-    sprintf(logbuf, "接收到来自服务器的 token2nd: %s", program_stat->token2nd);
+    strcpy(program_stat->token, token_plain);
+    sprintf(logbuf, "接收到来自服务器的 token: %s", program_stat->token);
     logging(LOG_DEBUG, logbuf); // 将 token 第二部分 作为 DEBUG 信息打印
 
     // 对可能接收到的服务端公钥进行处理 (serverpub_str 成员)

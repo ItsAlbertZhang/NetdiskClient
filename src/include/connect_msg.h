@@ -19,6 +19,7 @@ enum msg_type {
     MT_CS_CP,    // 短命令(command short): cp
     MT_CS_MKDIR, // 短命令(command short): mkdir
     MT_CS_RMDIR, // 短命令(command short): rmdir
+    MT_CL_S2C,   // 长命令(command long): server to client (download)
     MT_COMM_S,   // 短命令请求
     MT_COMM_L,   // 长命令请求
 };
@@ -50,7 +51,7 @@ int msgrecv_login(void);
 
 // 拷贝连接请求
 int msgsend_dupconn(void);
-int msgrecv_dupconn(int connect_fd);
+int msgrecv_dupconn(void);
 
 // pwd 命令请求
 int msgsend_cs_pwd(void);
@@ -83,5 +84,8 @@ int msgrecv_cs_mkdir(void);
 // rmdir 命令请求
 int msgsend_cs_rmdir(char *cmd);
 int msgrecv_cs_rmdir(void);
+
+// download 请求
+int msg_cl_s2c(char *cmd);
 
 #endif /* __CONNECT_MSG_H__ */

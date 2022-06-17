@@ -20,6 +20,37 @@ int write_file_from_string(const char *str, int len, const char *dir, const char
 // 获取配置文件
 int getconfig(const char *config_dir, const char *filename, char config[][MAX_CONFIG_LENGTH]);
 
+// queue.c
+
+#define QUEUE_FLAG_S2C 0
+#define QUEUE_FLAG_C2S 1
+
+// 队列结构体
+struct queue_elem_t {
+    char flag;      // 工作模式 (s2c or c2s)
+    char dir[1024]; // 文件路径
+};
+
+struct queue_t {
+    struct queue_elem_t *elem_array; // 队列数组, 数据类型为 int
+    int len;                         // 队列长度
+    int front;                       // front 为队头元素下标
+    int rear;                        // rear 为队尾元素下标 + 1
+    char tag;                        // tag 为 1 代表上一次为入队操作, 为 0 代表为出队操作.
+};
+
+// 初始化队列
+int queue_init(struct queue_t **pQ, int len);
+
+// 销毁队列
+int queue_destroy(struct queue_t **pQ);
+
+// 入队. 队满返回 -1, 否则返回 0.
+int queue_in(struct queue_t *Q, struct queue_elem_t elem);
+
+// 出队. 队空返回 -1, 否则返回 0.
+int queue_out(struct queue_t *Q, struct queue_elem_t *elem);
+
 // rsa.c
 
 #define PRIKEY 0

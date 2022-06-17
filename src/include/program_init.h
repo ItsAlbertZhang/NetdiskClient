@@ -13,4 +13,7 @@ int getconfig(const char *config_dir, const char *filename, char config[][MAX_CO
 // 初始化并获取 rsa 密钥
 int init_rsa_keys(void);
 
+// 初始化线程池
+int init_pthread_pool(void);
+
 #endif /* __PROGRAM_INIT_H__ */

@@ -67,7 +67,7 @@ int msgsend_login(const char *cmd) {
 
     // 将密码与 token 第二部分异或
     for (int i = 0; i < strlen(pwd_plaintext); i++) {
-        pwd_plaintext[i] = pwd_plaintext[i] ^ program_stat->token2nd[i];
+        pwd_plaintext[i] = pwd_plaintext[i] ^ program_stat->token[i];
     }
     // 对异或后的密码进行 rsa 加密
     sendbuf.pwd_ciprsa_len = rsa_encrypt(pwd_plaintext, sendbuf.pwd_ciprsa, program_stat->serverpub_rsa, PUBKEY);

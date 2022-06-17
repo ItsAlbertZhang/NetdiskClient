@@ -93,6 +93,13 @@ int connect_sendmsg_handle(void) {
             logging(LOG_ERROR, "msgsend_cs_rmdir 执行出错.");
         }
         break;
+    case MT_CL_S2C:
+        logging(LOG_INFO, "执行 download 命令请求.");
+        ret = msg_cl_s2c(cmd);
+        if (-1 == ret) {
+            logging(LOG_ERROR, "msg_cl_s2c 执行出错.");
+        }
+        break;
     default:
         break;
     }
@@ -128,7 +135,7 @@ int connect_recvmsg_handle(void) {
             break;
         case MT_DUPCONN:
             // logging(LOG_INFO, "收到拷贝连接请求的回复.");
-            msgrecv_dupconn(program_stat->connect_fd);
+            msgrecv_dupconn();
             break;
         case MT_CS_PWD:
             // logging(LOG_INFO, "收到 pwd 命令请求的回复.");
@@ -161,6 +168,10 @@ int connect_recvmsg_handle(void) {
         case MT_CS_RMDIR:
             // logging(LOG_INFO, "收到 rmdir 命令请求的回复.");
             msgrecv_cs_rmdir();
+            break;
+        case MT_CL_S2C:
+            // logging(LOG_INFO, "收到 download 命令请求的回复.");
+            // msgrecv_cs_rmdir();
             break;
         default:
             break;
@@ -251,6 +262,9 @@ int connect_sendmsg_cmdtype(char *cmd) {
     }
     if (!strncmp(cmd, "mkdir", strlen("mkdir"))) {
         return MT_CS_MKDIR;
+    }
+    if (!strncmp(cmd, "download", strlen("download"))) {
+        return MT_CL_S2C;
     }
 
     return 0;

@@ -17,5 +17,10 @@ int program_init() {
     RET_CHECK_BLACKLIST(-1, ret, "init_rsa_keys");
     logging(LOG_INFO, "成功获取 rsa 密钥.");
 
+    // 初始化线程池
+    ret = init_pthread_pool();
+    RET_CHECK_BLACKLIST(-1, ret, "init_pthread_pool");
+    logging(LOG_INFO, "成功初始化线程池.");
+
     return 0;
 }
