@@ -30,13 +30,6 @@ int connect_sendmsg_handle(void) {
             logging(LOG_ERROR, "msgsend_login 执行出错.");
         }
         break;
-    case MT_DUPCONN:
-        logging(LOG_INFO, "执行拷贝连接请求.");
-        ret = msgsend_dupconn();
-        if (-1 == ret) {
-            logging(LOG_ERROR, "msgsend_dupconn 执行出错.");
-        }
-        break;
     case MT_CS_PWD:
         logging(LOG_INFO, "执行 pwd 命令请求.");
         ret = msgsend_cs_pwd();
@@ -135,7 +128,7 @@ int connect_recvmsg_handle(void) {
             break;
         case MT_DUPCONN:
             // logging(LOG_INFO, "收到拷贝连接请求的回复.");
-            msgrecv_dupconn();
+            msgrecv_dupconn(program_stat->connect_fd);
             break;
         case MT_CS_PWD:
             // logging(LOG_INFO, "收到 pwd 命令请求的回复.");
@@ -209,10 +202,7 @@ size_t send_n(int connect_fd, const void *buf, size_t len, int flags) {
         // 则第二次调用 send_n 时, 连接已经恢复, 但传入的 connect_fd 依旧为 -1.
         // 只有当连接真的没有恢复时, 才执行 dupconn.
         if (-1 == program_stat->connect_fd) {
-            int dupconn_ret = msgsend_dupconn();
-            if (-1 == dupconn_ret) {
-                logging(LOG_ERROR, "msgsend_dupconn 执行出错.");
-            }
+            msgsend_dupconn(&program_stat->connect_fd);
         }
         // 传入的 connect_fd 为 -1, 说明调用 send_n 的函数欲发送数据的对端一定是主线程连接(而非子线程连接).
         // 因此, 可以自行从 program_stat 中拿取 connect_fd.
@@ -235,9 +225,6 @@ int connect_sendmsg_cmdtype(char *cmd) {
     }
     if (!strncmp(cmd, "login", strlen("login"))) {
         return MT_LOGIN;
-    }
-    if (!strncmp(cmd, "dup", strlen("dup"))) {
-        return MT_DUPCONN;
     }
     if (!strncmp(cmd, "pwd", strlen("pwd"))) {
         return MT_CS_PWD;

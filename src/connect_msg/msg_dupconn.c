@@ -46,7 +46,7 @@ static int msg_dupconn_recv(int connect_fd, struct msg_dupconn_recvbuf_t *recvbu
     return 0;
 }
 
-int msgsend_dupconn(void) {
+int msgsend_dupconn(int *connect_fd) {
     int ret = 0;
 
     // 准备资源
@@ -55,12 +55,11 @@ int msgsend_dupconn(void) {
     sendbuf.msgtype = MT_DUPCONN;
 
     // 建立新连接
-    int connect_fd = connect_init(program_stat->config_dir);
-    RET_CHECK_BLACKLIST(-1, connect_fd, "connect_init");
+    *connect_fd = connect_init(program_stat->config_dir);
+    RET_CHECK_BLACKLIST(-1, *connect_fd, "connect_init");
     // 如果是重连请求, 则将其添加至 epoll 监听
-    if (-1 == program_stat->connect_fd) {
-        program_stat->connect_fd = connect_fd;
-        ret = epoll_add(connect_fd);
+    if (connect_fd == &program_stat->connect_fd) {
+        ret = epoll_add(*connect_fd);
         RET_CHECK_BLACKLIST(-1, ret, "epoll_add");
     }
 
@@ -69,22 +68,22 @@ int msgsend_dupconn(void) {
     sendbuf.token_ciprsa_len = rsa_encrypt(program_stat->token, sendbuf.token_ciprsa, program_stat->serverpub_rsa, PUBKEY);
 
     // 向服务端发送信息.
-    ret = msg_dupconn_send(connect_fd, &sendbuf);
+    ret = msg_dupconn_send(*connect_fd, &sendbuf);
     RET_CHECK_BLACKLIST(-1, ret, "msg_dupconn_send");
 
-    // 返回新连接文件描述符
-    return connect_fd;
+    // 如果是重连请求, 则返回 0, 否则返回新连接文件描述符
+    return (connect_fd != &program_stat->connect_fd) * (*connect_fd);
 }
 
-int msgrecv_dupconn(void) {
+int msgrecv_dupconn(int connect_fd) {
     int ret = 0;
 
     // 准备资源
     struct msg_dupconn_recvbuf_t recvbuf;
     bzero(&recvbuf, sizeof(recvbuf));
 
-    // 获取服务端的回复信息.
-    ret = msg_dupconn_recv(program_stat->connect_fd, &recvbuf);
+    // 获取服务端的回复信息
+    ret = msg_dupconn_recv(connect_fd, &recvbuf);
     RET_CHECK_BLACKLIST(-1, ret, "msg_dupconn_recv");
 
     if (APPROVE == recvbuf.approve) {

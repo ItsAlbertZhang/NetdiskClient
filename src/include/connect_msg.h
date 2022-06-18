@@ -50,8 +50,8 @@ int msgsend_login(const char *cmd);
 int msgrecv_login(void);
 
 // 拷贝连接请求
-int msgsend_dupconn(void);
-int msgrecv_dupconn(void);
+int msgsend_dupconn(int *connect_fd);
+int msgrecv_dupconn(int connect_fd);
 
 // pwd 命令请求
 int msgsend_cs_pwd(void);

@@ -27,8 +27,10 @@ int getconfig(const char *config_dir, const char *filename, char config[][MAX_CO
 
 // 队列结构体
 struct queue_elem_t {
-    char flag;      // 工作模式 (s2c or c2s)
-    char dir[1024]; // 文件路径
+    char flag;         // 工作模式 (s2c or c2s)
+    int connect_fd;    // 连接对端的 socket 文件描述符
+    size_t filesize;   // 文件大小
+    char filename[64]; // 文件名
 };
 
 struct queue_t {

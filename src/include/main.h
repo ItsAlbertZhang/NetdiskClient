@@ -2,6 +2,7 @@
 #define __MAIN_H__
 
 #include "head.h"
+#include "mylibrary.h"
 
 // 子线程共用资源
 struct thread_resource_t {
