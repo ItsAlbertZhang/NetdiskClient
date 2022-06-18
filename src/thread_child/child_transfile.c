@@ -23,7 +23,7 @@ static size_t recv_splice_n(int connect_fd, int filefd, size_t filesize, int *pi
         ret = splice(connect_fd, NULL, pipefd[1], NULL, 32768, SPLICE_F_MORE | SPLICE_F_MOVE);
         ret = splice(pipefd[0], NULL, filefd, NULL, ret, SPLICE_F_MORE | SPLICE_F_MOVE);
         recvsize += ret;
-        printf("recvsize = %ld\n", recvsize);
+        // printf("recvsize = %ld\n", recvsize);
         // progress_bar_handle(&progress_bar, recvsize);
     }
     // progress_bar_destroy(&progress_bar);
