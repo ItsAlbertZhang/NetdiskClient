@@ -29,6 +29,17 @@ struct program_stat_t {
     int pretoken;
 };
 
+#define QUEUE_FLAG_S2C 0
+#define QUEUE_FLAG_C2S 1
+
+// 队列结构体
+struct thread_task_queue_elem_t {
+    char flag;         // 工作模式 (s2c or c2s)
+    int connect_fd;    // 连接对端的 socket 文件描述符
+    size_t filesize;   // 文件大小
+    char filename[64]; // 文件名
+};
+
 extern struct program_stat_t *program_stat;
 
 enum log_type {
