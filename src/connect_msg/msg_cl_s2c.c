@@ -91,7 +91,7 @@ int msg_cl_s2c(char *cmd) {
         strcpy(elem.filename, recvbuf.filename);
 
         // 入队. (队列为线程资源队列, 用于存放待子线程处理的请求.)
-        ret = queue_in(program_stat->thread_stat.thread_resource.queue, &elem);
+        ret = queue_in(program_stat->thread_stat.thread_resource.task_queue, &elem);
 
         // 向子线程发送委派请求
         pthread_cond_signal(&program_stat->thread_stat.thread_resource.cond);
