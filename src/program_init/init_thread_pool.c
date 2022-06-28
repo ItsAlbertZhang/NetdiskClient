@@ -17,6 +17,7 @@ int init_pthread_pool(void) {
     program_stat->thread_stat.pthid = (pthread_t *)malloc(sizeof(pthread_t) * program_stat->thread_stat.pth_num); // 初始化线程 id 数组
     // 初始化线程资源
     queue_init(&program_stat->thread_stat.thread_resource.task_queue, sizeof(struct thread_task_queue_elem_t), atoi(config[1])); // 初始化任务队列
+    pipe(program_stat->thread_stat.thread_resource.pipe_fd);                                                                     // 初始化管道
     pthread_mutex_init(&program_stat->thread_stat.thread_resource.mutex, NULL);                                                  // 初始化线程锁
     pthread_cond_init(&program_stat->thread_stat.thread_resource.cond, NULL);                                                    // 初始化条件变量
     // 初始化文件池所在目录
@@ -26,13 +27,13 @@ int init_pthread_pool(void) {
     queue_init(&program_stat->thread_stat.thread_resource.exclusive_resources_queue, sizeof(struct thread_exclusive_resources_queue_elem_t), atoi(config[0]));
     struct thread_exclusive_resources_queue_elem_t elem;
     for (int i = 0; i < atoi(config[0]); i++) {
-        bzero(&elem.progress_bar, sizeof(struct progress_bar_t));
+        bzero(&elem.progress_bar, sizeof(struct progress_t));
         ret = pipe(elem.pipefd);
         RET_CHECK_BLACKLIST(-1, ret, "pipe");
         queue_in(program_stat->thread_stat.thread_resource.exclusive_resources_queue, &elem);
     }
     // 初始化进度条
-    queue_init(&program_stat->thread_stat.thread_resource.progress_bar_queue, sizeof(struct progress_bar_t), atoi(config[0]));
+    queue_init(&program_stat->thread_stat.thread_resource.progress_queue, sizeof(struct progress_t *), atoi(config[0]));
 
     // 拉起子线程
     for (int i = 0; i < program_stat->thread_stat.pth_num; i++) {

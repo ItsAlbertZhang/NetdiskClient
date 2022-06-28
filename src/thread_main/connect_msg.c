@@ -93,6 +93,9 @@ int connect_sendmsg_handle(void) {
             logging(LOG_ERROR, "msg_cl_s2c 执行出错.");
         }
         break;
+    case MT_LOCAL_PROGRESS:
+        ret = local_progress();
+        break;
     default:
         break;
     }
@@ -252,6 +255,9 @@ int connect_sendmsg_cmdtype(char *cmd) {
     }
     if (!strncmp(cmd, "download", strlen("download"))) {
         return MT_CL_S2C;
+    }
+    if (!strncmp(cmd, "showpg", strlen("showpg"))) {
+        return MT_LOCAL_PROGRESS;
     }
 
     return 0;

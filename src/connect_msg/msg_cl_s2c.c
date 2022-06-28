@@ -96,6 +96,9 @@ int msg_cl_s2c(char *cmd) {
         // 向子线程发送委派请求
         pthread_cond_signal(&program_stat->thread_stat.thread_resource.cond);
         logging(LOG_DEBUG, "已向子线程发出委派请求.");
+
+        // 主线程进入进度条显示
+        local_progress();
     }
 
     return 0;

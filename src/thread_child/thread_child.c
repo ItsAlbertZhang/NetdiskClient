@@ -18,16 +18,26 @@ void *thread_child_handle(void *args) {
             pthread_cond_wait(&thread_resource->cond, &thread_resource->mutex);
         } else {
             // 出队成功, 拿到传输的对端所连接的 socket 文件描述符
-            // 在解锁之前, 操作本次任务所需的独占资源
+
+            // 在解锁之前, 对互斥资源进行操作
+            // 获取一个独占资源, 用于执行本次任务
             struct thread_exclusive_resources_queue_elem_t exclusive_resource_queue_elem;
             queue_out(thread_resource->exclusive_resources_queue, &exclusive_resource_queue_elem);
-            queue_in(thread_resource->progress_bar_queue, &exclusive_resource_queue_elem.progress_bar);
-            exclusive_resource_queue_elem.progress_bar.filesize = thread_task_queue_elem.filesize;
-            exclusive_resource_queue_elem.progress_bar.completedsize = 0;
+            // 将独占资源的进度条的指针填入进度条队列, 以方便在主进程访问进度
+            struct progress_t *progress_bar_p = &exclusive_resource_queue_elem.progress_bar;
+            queue_in(thread_resource->progress_queue, &progress_bar_p);
+
             // 执行解锁操作
             pthread_mutex_unlock(&thread_resource->mutex);
-            sprintf(logbuf, "子线程 %ld 已唤醒, 开始执行任务.", pthread_self());
-            logging(LOG_INFO, logbuf);
+            // sprintf(logbuf, "子线程 %ld 已唤醒, 开始执行任务.", pthread_self());
+            // logging(LOG_INFO, logbuf);
+
+            // 初始化进度条
+            progress_bar_p->filesize = thread_task_queue_elem.filesize;
+            progress_bar_p->completedsize = 0;
+            progress_bar_p->lastsize = 0;
+            progress_bar_p->starttime = time(NULL);
+            strcpy(progress_bar_p->filename, thread_task_queue_elem.filename);
 
             // 情况 QUEUE_FLAG_S2C: 执行 s2c 任务
             if (QUEUE_FLAG_S2C == thread_task_queue_elem.flag) {
@@ -38,15 +48,17 @@ void *thread_child_handle(void *args) {
                 int filefd = open(filedir, O_CREAT | O_TRUNC | O_RDWR, 0666);
                 ftruncate(filefd, thread_task_queue_elem.filesize);
                 // 执行文件传输
-                ret = child_s2c(thread_task_queue_elem.connect_fd, filefd, exclusive_resource_queue_elem.progress_bar, exclusive_resource_queue_elem.pipefd);
-                if (-1 == ret) {
-                    sprintf(logbuf, "下载任务失败.");
-                } else {
-                    sprintf(logbuf, "成功完成下载.");
-                }
-                logging(LOG_INFO, logbuf);
+                ret = child_s2c(thread_task_queue_elem.connect_fd, filefd, &exclusive_resource_queue_elem.progress_bar, exclusive_resource_queue_elem.pipefd);
                 // 关闭文件
                 close(filefd);
+                // 通知主线程
+                char buf[64] = {0};
+                if (-1 != ret) {
+                    strcpy(buf, thread_task_queue_elem.filename);
+                } else {
+                    strcpy(buf, "error");
+                }
+                write(thread_resource->pipe_fd[1], buf, sizeof(buf));
             }
 
             // 情况 QUEUE_FLAG_C2S: 执行 c2s 任务
@@ -54,8 +66,18 @@ void *thread_child_handle(void *args) {
                 // code here
             }
 
-            // 上锁, 并继续循环尝试出队.
+            // 等待 1 秒, 以使可能的进度条显示完成
+            sleep(1);
+
+            // 上锁并释放独占资源, 之后继续循环尝试出队.
             pthread_mutex_lock(&thread_resource->mutex);
+            struct progress_t *temp = NULL;
+            queue_out(thread_resource->progress_queue, &temp);
+            while (temp != progress_bar_p) {
+                queue_in(thread_resource->progress_queue, &temp);
+                queue_out(thread_resource->progress_queue, &temp);
+            }
+            queue_in(thread_resource->exclusive_resources_queue, &exclusive_resource_queue_elem);
         }
         // 注意: 尝试出队失败则 wait, 尝试出队成功则执行任务. 只有在 wait 的上下半之间(阻塞过程中), 以及执行任务期间, 锁处于解锁状态, 其他时间锁一律处于上锁状态.
     }
